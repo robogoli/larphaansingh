@@ -1,4 +1,4 @@
-name: Deploy DAKNUX to GitHub Pages
+name: Deploy LarphaanSingh to GitHub Pages
 
 on:
   push:
@@ -44,10 +44,15 @@ jobs:
         run: |
           test -f dist/index.html
           test -f dist/404.html
+          test -f dist/manifest.webmanifest
           test -f dist/data/zones.json
           test -f dist/data/quotes.json
+          test -f dist/assets/gmail-icon.svg
+          test -f dist/assets/gmail-32.png
+          test -f dist/assets/gmail-180.png
+          test -f dist/assets/gmail-192.png
+          test -f dist/assets/gmail-512.png
           test -f dist/assets/daknux/logo.png
-          test -f dist/assets/daknux/fav.png
           grep -q "/larphaansingh/assets/" dist/index.html
           ls -1 dist/assets/*.js >/dev/null
 

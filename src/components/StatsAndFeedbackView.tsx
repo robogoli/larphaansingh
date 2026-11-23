@@ -152,7 +152,7 @@ export default function StatsAndFeedbackView({
   function buildGitHubIssueHref(): string {
     const prefix =
       kind === 'broken_game' ? '[Broken Game]' : kind === 'suggest_game' ? '[Game Request]' : '[Feedback]';
-    const title = `${prefix} ${zoneName.trim() || 'DAKNUX Platform'}`;
+    const title = `${prefix} ${zoneName.trim() || 'LarphaanSingh Platform'}`;
     const body = buildReportBody();
     const params = new URLSearchParams({ title, body });
     return `${GITHUB_ISSUES_NEW_URL}?${params.toString()}`;
@@ -374,7 +374,7 @@ export default function StatsAndFeedbackView({
               Report an Issue or Suggest a Game
             </h2>
             <p className="mt-1 text-xs leading-relaxed text-slate-600 dark:text-slate-400">
-              Because DAKNUX runs on static GitHub Pages with no private telemetry backend, reports are formatted for direct submission via GitHub Issues or clipboard copy, and saved locally in your browser log.
+              Because LarphaanSingh runs on static GitHub Pages with no private telemetry backend, reports are formatted for direct submission via GitHub Issues or clipboard copy, and saved locally in your browser log.
             </p>
           </div>
         </div>

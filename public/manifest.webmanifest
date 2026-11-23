@@ -1,0 +1,29 @@
+{
+  "name": "LarphaanSingh",
+  "short_name": "LarphaanSingh",
+  "description": "LarphaanSingh — Modern web gaming platform with 630+ browser games.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#09090d",
+  "theme_color": "#7c3aed",
+  "icons": [
+    {
+      "src": "./assets/gmail-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./assets/gmail-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./assets/gmail-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

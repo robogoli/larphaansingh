@@ -185,7 +185,7 @@ export function computeAchievements(
     {
       id: 'first_game',
       name: 'First Launch',
-      description: 'Open and play your first game in DAKNUX.',
+      description: 'Open and play your first game in LarphaanSingh.',
       conditionLabel: 'Play 1 game',
       unlocked: history.length >= 1,
       progress: Math.min(1, history.length),
@@ -221,7 +221,7 @@ export function computeAchievements(
     {
       id: 'regular_visitor',
       name: 'Regular Visitor',
-      description: 'Visit DAKNUX on 3 separate calendar days.',
+      description: 'Visit LarphaanSingh on 3 separate calendar days.',
       conditionLabel: 'Visit on 3 days',
       unlocked: visitDays.length >= 3,
       progress: Math.min(3, visitDays.length),
@@ -259,7 +259,7 @@ export function computeAchievements(
 export function exportPersonalData(): string {
   return JSON.stringify(
     {
-      app: 'DAKNUX',
+      app: 'LarphaanSingh',
       schemaVersion: 2,
       exportedAt: new Date().toISOString(),
       localStorage: { ...localStorage },

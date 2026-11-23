@@ -122,6 +122,7 @@ export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [panicActive, setPanicActive] = useState(false);
   const [confirmClearHistory, setConfirmClearHistory] = useState(false);
+  const [entryAlertOpen, setEntryAlertOpen] = useState(true);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const [discoverRollNonce, setDiscoverRollNonce] = useState(0);
 
@@ -1449,7 +1450,7 @@ export default function App() {
               className="h-6 w-6 rounded-md object-cover"
             />
             <span>
-              <strong className="text-slate-800 dark:text-slate-200">DAKNUX</strong> ·{' '}
+              <strong className="text-slate-800 dark:text-slate-200">LarphaanSingh</strong> ·{' '}
               <span className="font-mono-tabular">{zones.length}</span> browser games ·{' '}
               {hasProxy ? 'Local Proxy Mode' : 'Static GitHub Pages Mode'}
             </span>
@@ -1549,6 +1550,45 @@ export default function App() {
           setConfirmClearHistory(false);
         }}
       />
+
+      {/* Entry Alert Notice on Every Visit */}
+      {entryAlertOpen && !panicActive && (
+        <div
+          className="fixed inset-0 z-[95] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm"
+          role="alertdialog"
+          aria-modal="true"
+          aria-labelledby="entry-alert-title"
+          aria-describedby="entry-alert-desc"
+        >
+          <div className="w-full max-w-md rounded-2xl border border-amber-500/35 bg-white p-6 text-slate-900 shadow-2xl dark:bg-[#13131e] dark:text-slate-100">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/15 text-amber-500">
+                <AlertCircle className="h-5 w-5" />
+              </div>
+              <h2 id="entry-alert-title" className="text-base font-bold">
+                Important Notice
+              </h2>
+            </div>
+            <p
+              id="entry-alert-desc"
+              className="mt-3 text-sm leading-relaxed text-slate-700 dark:text-slate-200"
+            >
+              Do not give this website to{' '}
+              <strong>Larphaan Vaibhav Amitabh Singh</strong>, aka{' '}
+              <strong>Vihaan Singh</strong>.
+            </p>
+            <div className="mt-5 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setEntryAlertOpen(false)}
+                className="h-10 rounded-xl bg-violet-600 px-5 text-sm font-semibold text-white hover:bg-violet-500 cursor-pointer"
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {panicActive && <PanicShield onExit={() => setPanicActive(false)} />}
 

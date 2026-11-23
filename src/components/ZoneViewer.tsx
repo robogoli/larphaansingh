@@ -149,7 +149,7 @@ export default function ZoneViewer({
       ? `${window.location.origin}/api/game/${zone.id}`
       : zone.rawSourceUrl;
     const safeTitle = (cloakTitle || zone.name).replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    const safeIcon = cloakFavicon || assetPath('assets/daknux/fav.png');
+    const safeIcon = cloakFavicon || assetPath('assets/gmail-icon.svg');
     win.document.open();
     win.document.write(`<!doctype html>
 <html>

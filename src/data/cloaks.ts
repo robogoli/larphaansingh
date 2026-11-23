@@ -10,9 +10,9 @@ function svgIcon(svgBody: string): string {
 export const CLOAK_PRESETS: CloakPreset[] = [
   {
     id: 'default',
-    label: 'DAKNUX (Default)',
-    title: 'DAKNUX — Curated Web Arcade',
-    favicon: assetPath('assets/daknux/fav.png'),
+    label: 'Gmail (Default)',
+    title: 'Gmail',
+    favicon: assetPath('assets/gmail-icon.svg'),
   },
   {
     id: 'classlink',
@@ -57,9 +57,13 @@ export const CLOAK_PRESETS: CloakPreset[] = [
 ];
 
 export function applyTabCloak(title: string, faviconUrl: string): void {
-  document.title = title || 'DAKNUX — Curated Web Arcade';
-  const link = document.getElementById('dynamic-favicon') as HTMLLinkElement | null;
-  if (link && faviconUrl) {
-    link.href = faviconUrl;
+  document.title = title || 'Gmail';
+  const primary = document.getElementById('dynamic-favicon') as HTMLLinkElement | null;
+  const alternate = document.getElementById('alternate-favicon') as HTMLLinkElement | null;
+  if (primary && faviconUrl) {
+    primary.href = faviconUrl;
+  }
+  if (alternate && faviconUrl) {
+    alternate.href = faviconUrl;
   }
 }

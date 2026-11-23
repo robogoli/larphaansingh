@@ -19,7 +19,7 @@ export default function QuoteMarquee({ quotes, visible }: QuoteMarqueeProps) {
 
   if (!visible || quotes.length === 0) return null;
 
-  const text = quotes[index] || 'WELCOME TO DAKNUX';
+  const text = (quotes[index] || 'WELCOME TO LARPHAANSINGH').replace(/daknux/gi, 'LarphaanSingh');
 
   return (
     <div

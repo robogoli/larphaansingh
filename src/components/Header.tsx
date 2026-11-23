@@ -102,12 +102,12 @@ export default function Header({
           >
             <img
               src={assetPath('assets/daknux/logo.png')}
-              alt="DAKNUX"
+              alt="LarphaanSingh"
               className="h-8 w-8 rounded-lg object-cover ring-1 ring-black/10 dark:ring-white/15"
             />
             <div>
               <span className="font-display block text-2xl leading-none tracking-wider text-slate-900 dark:text-white">
-                DAKNUX
+                LarphaanSingh
               </span>
               <span className="hidden text-[11px] font-medium text-slate-500 dark:text-slate-400 sm:block font-mono-tabular">
                 {totalCatalogCount} Games

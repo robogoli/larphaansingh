@@ -69,7 +69,7 @@ function buildHonestDescription(zone: Zone, categories: CategoryId[]): string {
     return `${zone.name} runs via browser-based retro emulation in the ${categoryName} library. ${creator}`;
   }
   if (tags.includes('tools')) {
-    return `${zone.name} is an interactive browser utility or soundboard included in the DAKNUX collection. ${creator}`;
+    return `${zone.name} is an interactive browser utility or soundboard included in the LarphaanSingh collection. ${creator}`;
   }
   return `${zone.name} is a playable browser entry in the ${categoryName} catalog. ${creator}`;
 }

@@ -142,7 +142,7 @@ export default function InfoModal({
             <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
             <span>
               {hasProxy
-                ? 'Running with local DAKNUX streaming proxy enabled for asset compatibility.'
+                ? 'Running with local LarphaanSingh streaming proxy enabled for asset compatibility.'
                 : 'Static GitHub Pages mode: embeds source directly via standard browser iframe. Some external hosts may restrict framing.'}
             </span>
           </div>
