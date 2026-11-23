@@ -770,7 +770,9 @@ window.google.ima = window.google.ima || {
           const json = await resp.json();
           const list = Array.isArray(json) ? json : Array.isArray(json?.zones) ? json.zones : [];
           if (list.length > 100) {
-            cachedZones = list;
+            const upstreamIds = new Set(list.map((z: ZoneEntry) => z.id));
+            const localAdditions = loadLocalZones().filter((z) => !upstreamIds.has(z.id));
+            cachedZones = [...list, ...localAdditions];
             lastZonesSync = Date.now();
           }
         }
@@ -866,7 +868,7 @@ window.google.ima = window.google.ima || {
       res.status(404).send('Zone not found');
       return;
     }
-    if (zone.url.startsWith('http://') || zone.url.startsWith('https://')) {
+    if (zone.id < 0 || !zone.url || zone.url.includes('discord.gg')) {
       res.status(400).send('External link zone');
       return;
     }

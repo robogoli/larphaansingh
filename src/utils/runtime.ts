@@ -128,21 +128,26 @@ export async function loadCatalogRuntime(refresh = false): Promise<CatalogLoadRe
   const quotesPath = assetPath('data/quotes.json');
 
   const [bundledZonesRes, quotesRes] = await Promise.all([
-    rawZones
-      ? Promise.resolve(null)
-      : fetch(refresh ? `${zonesPath}?v=${Date.now()}` : zonesPath, {
-          cache: refresh ? 'no-store' : 'default',
-        }),
+    fetch(refresh ? `${zonesPath}?v=${Date.now()}` : zonesPath, {
+      cache: refresh ? 'no-store' : 'default',
+    }),
     fetch(refresh ? `${quotesPath}?v=${Date.now()}` : quotesPath, {
       cache: refresh ? 'no-store' : 'default',
     }),
   ]);
 
-  if (!rawZones) {
+  const bundledZones =
+    bundledZonesRes && bundledZonesRes.ok ? ((await bundledZonesRes.json()) as Zone[]) : [];
+
+  if (rawZones) {
+    const upstreamIds = new Set(rawZones.map((z) => z.id));
+    const localAdditions = bundledZones.filter((z) => !upstreamIds.has(z.id));
+    rawZones = [...rawZones, ...localAdditions];
+  } else {
     if (!bundledZonesRes || !bundledZonesRes.ok) {
       throw new Error('Unable to load bundled static game catalog.');
     }
-    rawZones = (await bundledZonesRes.json()) as Zone[];
+    rawZones = bundledZones;
   }
 
   const rawQuotes = quotesRes.ok ? await quotesRes.json() : [];
