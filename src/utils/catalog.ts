@@ -15,6 +15,15 @@ const KEYWORD_CATEGORY_RULES: Array<[RegExp, CategoryId]> = [
   [/\b(clicker|idle|cookie|flappy|fnf|funkin|sprunki|incredibox|rhythm|slope|run 3|temple|subway|crossy|stack|snake|pacman|pac-man)\b/i, 'casual'],
 ];
 
+const KNOWN_FRAME_BLOCKED_DOMAINS = [
+  'discord.gg',
+  'discord.com',
+  'github.com',
+  'youtube.com',
+  'youtu.be',
+  'twitch.tv',
+];
+
 function inferCategories(zone: Zone): CategoryId[] {
   const cats = new Set<CategoryId>();
   const tags = (zone.special || []).map((t) => t.toLowerCase());
@@ -82,14 +91,40 @@ function buildHonestControlsHint(zone: Zone): string {
   return 'Uses standard browser mouse, keyboard, or touch controls depending on the game. Click the frame once if keys do not respond, or toggle Touch Pad for mobile.';
 }
 
-export function isValidHttpOrRelativeUrl(url: string): boolean {
-  if (!url) return false;
-  if (url.startsWith('/') || url.startsWith('./')) return true;
+export function isValidSafeExternalUrl(url: string): boolean {
+  if (!url || typeof url !== 'string') return false;
+  const trimmed = url.trim();
+  if (!trimmed) return false;
   try {
-    const parsed = new URL(url);
+    const parsed = new URL(trimmed);
     return parsed.protocol === 'https:' || parsed.protocol === 'http:';
   } catch {
     return false;
+  }
+}
+
+export function isValidHttpOrRelativeUrl(url: string): boolean {
+  if (!url || typeof url !== 'string') return false;
+  const trimmed = url.trim();
+  if (!trimmed || /^javascript:/i.test(trimmed) || /^data:/i.test(trimmed)) return false;
+  if (trimmed.startsWith('/') || trimmed.startsWith('./')) return true;
+  return isValidSafeExternalUrl(trimmed);
+}
+
+export function isLikelyEmbeddableUrl(rawOriginalUrl: string, resolvedUrl: string): boolean {
+  if (!isValidHttpOrRelativeUrl(resolvedUrl)) return false;
+  if (rawOriginalUrl.startsWith('{HTML_URL}') || rawOriginalUrl.startsWith('{COVER_URL}')) {
+    return true;
+  }
+  try {
+    const parsed = new URL(resolvedUrl);
+    const host = parsed.hostname.toLowerCase();
+    if (KNOWN_FRAME_BLOCKED_DOMAINS.some((d) => host === d || host.endsWith(`.${d}`))) {
+      return false;
+    }
+    return parsed.protocol === 'https:' || parsed.protocol === 'http:';
+  } catch {
+    return resolvedUrl.startsWith('/') || resolvedUrl.startsWith('./');
   }
 }
 
@@ -111,7 +146,9 @@ export function validateAndEnrichCatalog(rawZones: Zone[]): EnrichedZone[] {
     const rawCoverUrl = resolveCoverUrl(item.cover || '', false);
     const rawSourceUrl = resolveGameSourceUrl(item.url || '');
     const isValid = isValidHttpOrRelativeUrl(rawSourceUrl);
-    const isEmbeddable = isValid && !(item.url.startsWith('http://') || item.url.startsWith('https://'));
+    const isEmbeddable = isLikelyEmbeddableUrl(item.url || '', rawSourceUrl);
+    const safeAuthorLink =
+      item.authorLink && isValidSafeExternalUrl(item.authorLink) ? item.authorLink.trim() : undefined;
 
     const categories = inferCategories(item);
     const primaryCategory = categories[0];
@@ -119,6 +156,7 @@ export function validateAndEnrichCatalog(rawZones: Zone[]): EnrichedZone[] {
 
     enriched.push({
       ...item,
+      authorLink: safeAuthorLink,
       name: cleanName,
       categories,
       primaryCategory,
@@ -143,7 +181,6 @@ export function getDailyFeaturedZone(zones: EnrichedZone[]): EnrichedZone | null
   const today = new Date();
   const dateSeed =
     today.getUTCFullYear() * 10000 + (today.getUTCMonth() + 1) * 100 + today.getUTCDate();
-  // Deterministic hash per calendar day across all clients with zero backend needed
   let hash = dateSeed * 2654435761;
   hash = ((hash >>> 16) ^ hash) >>> 0;
   return candidates[hash % candidates.length] || candidates[0];
@@ -204,7 +241,7 @@ export function getRecommendedZones(
       }
       const score = (z: EnrichedZone) => {
         let s = z.featured ? 1.5 : 0;
-        if (favSet.has(z.id)) s -= 1; // Prefer surfacing fresh recommendations
+        if (favSet.has(z.id)) s -= 1;
         for (const c of z.categories) s += categoryWeights.get(c) || 0;
         for (const t of z.special || []) s += tagWeights.get(t) || 0;
         return s;

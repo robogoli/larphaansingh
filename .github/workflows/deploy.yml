@@ -27,16 +27,29 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Install dependencies
-        run: npm ci --legacy-peer-deps || npm install --legacy-peer-deps
+      - name: Verify lockfile and install dependencies
+        run: |
+          test -f package-lock.json
+          npm ci --legacy-peer-deps
 
       - name: TypeScript type check
-        run: npx tsc --noEmit
+        run: npm run lint
 
-      - name: Build production bundle
+      - name: Build static GitHub Pages bundle
         env:
           VITE_BASE_PATH: /larphaansingh/
         run: npm run build
+
+      - name: Verify production build artifacts
+        run: |
+          test -f dist/index.html
+          test -f dist/404.html
+          test -f dist/data/zones.json
+          test -f dist/data/quotes.json
+          test -f dist/assets/daknux/logo.png
+          test -f dist/assets/daknux/fav.png
+          grep -q "/larphaansingh/assets/" dist/index.html
+          ls -1 dist/assets/*.js >/dev/null
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Award,
   BarChart3,
@@ -30,6 +30,8 @@ interface StatsAndFeedbackViewProps {
   visitDays: string[];
   achievements: AchievementStatus[];
   feedbackLog: FeedbackDraft[];
+  prefilledReportZone: EnrichedZone | null;
+  onClearPrefillReport: () => void;
   hasProxy: boolean;
   onSaveFeedbackDraft: (draft: FeedbackDraft) => void;
   onPlayZone: (zone: EnrichedZone) => void;
@@ -46,6 +48,8 @@ export default function StatsAndFeedbackView({
   visitDays,
   achievements,
   feedbackLog,
+  prefilledReportZone,
+  onClearPrefillReport,
   hasProxy,
   onSaveFeedbackDraft,
   onPlayZone,
@@ -54,6 +58,16 @@ export default function StatsAndFeedbackView({
   const [kind, setKind] = useState<FeedbackDraft['kind']>('broken_game');
   const [zoneName, setZoneName] = useState('');
   const [details, setDetails] = useState('');
+
+  useEffect(() => {
+    if (!prefilledReportZone) return;
+    setKind('broken_game');
+    setZoneName(`${prefilledReportZone.name} (#${prefilledReportZone.id})`);
+    setDetails(
+      `Game failed to load or embed properly.\nSource URL: ${prefilledReportZone.rawSourceUrl}\nPlease describe what happened: `
+    );
+    onClearPrefillReport();
+  }, [prefilledReportZone, onClearPrefillReport]);
 
   const byId = useMemo(() => new Map(zones.map((z) => [z.id, z])), [zones]);
 
@@ -130,7 +144,7 @@ export default function StatsAndFeedbackView({
     setZoneName('');
     onToast(
       'Saved locally & copied',
-      'Report copied to clipboard and saved to your local log. Use Open GitHub Issue to submit publicly.',
+      'Diagnostic report copied to clipboard and stored in your browser log.',
       'success'
     );
   }
@@ -146,7 +160,6 @@ export default function StatsAndFeedbackView({
 
   return (
     <div className="space-y-8">
-      {/* Section Header */}
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
@@ -198,7 +211,6 @@ export default function StatsAndFeedbackView({
         </div>
 
         <div className="grid gap-4 lg:grid-cols-2">
-          {/* Category Breakdown */}
           <div className="rounded-2xl border border-slate-200/90 bg-white p-5 dark:border-white/10 dark:bg-[#12121b]">
             <h3 className="text-sm font-bold text-slate-900 dark:text-white">
               Most Played Categories
@@ -229,7 +241,6 @@ export default function StatsAndFeedbackView({
             )}
           </div>
 
-          {/* Recent Activity */}
           <div className="rounded-2xl border border-slate-200/90 bg-white p-5 dark:border-white/10 dark:bg-[#12121b]">
             <h3 className="text-sm font-bold text-slate-900 dark:text-white">
               Recent Activity
@@ -350,6 +361,7 @@ export default function StatsAndFeedbackView({
 
       {/* Honest Feedback & Broken Game Reporting */}
       <section
+        id="report-feedback"
         aria-labelledby="feedback-heading"
         className="rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 dark:border-white/10 dark:bg-[#12121b]"
       >
@@ -413,7 +425,7 @@ export default function StatsAndFeedbackView({
               Details
             </span>
             <textarea
-              rows={3}
+              rows={4}
               value={details}
               onChange={(e) => setDetails(e.target.value)}
               placeholder="Describe what happened, what browser/device you used, or what feature you would like..."

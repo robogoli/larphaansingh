@@ -118,6 +118,7 @@ export default function App() {
 
   const [activeZone, setActiveZone] = useState<EnrichedZone | null>(null);
   const [infoZone, setInfoZone] = useState<EnrichedZone | null>(null);
+  const [reportTargetZone, setReportTargetZone] = useState<EnrichedZone | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [panicActive, setPanicActive] = useState(false);
   const [confirmClearHistory, setConfirmClearHistory] = useState(false);
@@ -152,12 +153,23 @@ export default function App() {
       setStats(runtime.stats);
       setHasProxy(runtime.hasProxy);
       setPlayHistory(loadPlayHistory(enriched));
+      if (refresh) {
+        addToast(
+          'Catalog refreshed',
+          runtime.hasProxy
+            ? 'Synced latest catalog from local proxy.'
+            : runtime.refreshedUpstream
+              ? 'Synced catalog update from upstream CDN.'
+              : 'Reloaded bundled static catalog cleanly.',
+          'success'
+        );
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to load the game catalog.');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [addToast]);
 
   useEffect(() => {
     loadAll(false);
@@ -921,6 +933,16 @@ export default function App() {
                   <div className="flex flex-wrap items-center gap-2">
                     <button
                       type="button"
+                      onClick={() => loadAll(true)}
+                      title="Refresh game catalog"
+                      className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-white/15 dark:bg-white/5 dark:text-slate-200 cursor-pointer"
+                    >
+                      <RefreshCw className="h-3.5 w-3.5" />
+                      <span>Refresh</span>
+                    </button>
+
+                    <button
+                      type="button"
                       onClick={() => {
                         setFavoritesOnly((v) => !v);
                         setVisibleCount(PAGE_BATCH);
@@ -1401,6 +1423,8 @@ export default function App() {
                 visitDays={visitDays}
                 achievements={achievements}
                 feedbackLog={feedbackLog}
+                prefilledReportZone={reportTargetZone}
+                onClearPrefillReport={() => setReportTargetZone(null)}
                 hasProxy={hasProxy}
                 onSaveFeedbackDraft={(draft) => {
                   const next = [draft, ...feedbackLog].slice(0, 20);
@@ -1475,6 +1499,13 @@ export default function App() {
           onToggleFavorite={handleToggleFavorite}
           onClose={() => setActiveZone(null)}
           onShowInfo={setInfoZone}
+          onReportIssue={(z) => {
+            setActiveZone(null);
+            setInfoZone(null);
+            setReportTargetZone(z);
+            navigateTo('stats');
+          }}
+          onToast={addToast}
         />
       )}
 
@@ -1487,6 +1518,12 @@ export default function App() {
         onToggleFavorite={handleToggleFavorite}
         onClose={() => setInfoZone(null)}
         onPlay={handlePlayZone}
+        onReportIssue={(z) => {
+          setActiveZone(null);
+          setInfoZone(null);
+          setReportTargetZone(z);
+          navigateTo('stats');
+        }}
       />
 
       {/* Settings & Personalization Modal */}

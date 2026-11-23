@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import {
   AlertTriangle,
   ArrowLeft,
+  Bug,
   ChevronDown,
   ChevronUp,
   Download,
@@ -25,6 +26,8 @@ interface ZoneViewerProps {
   onToggleFavorite: (id: number) => void;
   onClose: () => void;
   onShowInfo: (zone: EnrichedZone) => void;
+  onReportIssue: (zone: EnrichedZone) => void;
+  onToast: (title: string, message?: string, type?: 'info' | 'success' | 'warning' | 'error') => void;
 }
 
 const TOUCH_BRIDGE_SCRIPT = `<script>
@@ -46,8 +49,6 @@ const TOUCH_BRIDGE_SCRIPT = `<script>
 
 function prepareStaticHtml(rawText: string, sourceUrl: string): string {
   let html = rawText;
-
-  // Unwrap legacy Flash <Module><Content><![CDATA[...]]></Content></Module> XML if encountered
   if (html.trimStart().startsWith('<Module')) {
     const match = html.match(/<!\[CDATA\[([\s\S]*?)\]\]>/i);
     if (match?.[1]) {
@@ -84,6 +85,8 @@ export default function ZoneViewer({
   onToggleFavorite,
   onClose,
   onShowInfo,
+  onReportIssue,
+  onToast,
 }: ZoneViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -92,54 +95,27 @@ export default function ZoneViewer({
   const [showGamepad, setShowGamepad] = useState(false);
   const [toolbarHidden, setToolbarHidden] = useState(false);
   const [reloadNonce, setReloadNonce] = useState(0);
-  const [staticHtml, setStaticHtml] = useState<string | null>(null);
-  const [staticError, setStaticError] = useState<string | null>(null);
-  const [useDirectFrameFallback, setUseDirectFrameFallback] = useState(false);
+  const [inlineSrcDoc, setInlineSrcDoc] = useState<string | null>(null);
+  const [showEmbedHelp, setShowEmbedHelp] = useState(false);
 
   const proxyGameSrc = `/api/game/${zone.id}?v=${reloadNonce}`;
+  const blockedFromEmbed = !hasProxy && (!zone.isValid || !zone.isEmbeddable);
 
   useEffect(() => {
-    setLoading(true);
+    setLoading(!blockedFromEmbed);
     setDownloadingAssets(false);
-    setStaticError(null);
-    setStaticHtml(null);
-    setUseDirectFrameFallback(false);
+    setInlineSrcDoc(null);
+    setShowEmbedHelp(false);
 
-    if (hasProxy) return;
+    if (blockedFromEmbed) return;
 
-    if (!zone.isValid) {
-      setLoading(false);
-      setStaticError('This entry does not have a valid playable source URL.');
-      return;
-    }
+    // Gentle non-blocking timeout hint if a third-party site refuses framing or takes unusually long
+    const timer = window.setTimeout(() => {
+      setShowEmbedHelp(true);
+    }, 6500);
 
-    if (!zone.isEmbeddable) {
-      setLoading(false);
-      setStaticError('This external link cannot be embedded directly inside the viewer frame.');
-      return;
-    }
-
-    const controller = new AbortController();
-    fetch(zone.rawSourceUrl, { signal: controller.signal })
-      .then(async (res) => {
-        if (!res.ok) {
-          throw new Error(`Upstream returned status ${res.status}`);
-        }
-        const text = await res.text();
-        setStaticHtml(prepareStaticHtml(text, zone.rawSourceUrl));
-      })
-      .catch((err) => {
-        if (controller.signal.aborted) return;
-        setLoading(false);
-        setStaticError(
-          err instanceof Error
-            ? `Could not load game assets cleanly (${err.message}).`
-            : 'Could not load game assets in static browser mode.'
-        );
-      });
-
-    return () => controller.abort();
-  }, [zone.id, zone.isValid, zone.isEmbeddable, zone.rawSourceUrl, hasProxy, reloadNonce]);
+    return () => window.clearTimeout(timer);
+  }, [zone.id, reloadNonce, blockedFromEmbed]);
 
   useEffect(() => {
     function onFrameMessage(ev: MessageEvent) {
@@ -165,17 +141,17 @@ export default function ZoneViewer({
 
   function handleOpenAboutBlank() {
     const win = window.open('about:blank', '_blank');
-    if (!win) return;
+    if (!win) {
+      onToast('Popup blocked', 'Allow popups for this site to open games in an about:blank tab.', 'warning');
+      return;
+    }
     const frameTarget = hasProxy
       ? `${window.location.origin}/api/game/${zone.id}`
       : zone.rawSourceUrl;
     const safeTitle = (cloakTitle || zone.name).replace(/</g, '&lt;').replace(/>/g, '&gt;');
     const safeIcon = cloakFavicon || assetPath('assets/daknux/fav.png');
     win.document.open();
-    if (!hasProxy && staticHtml) {
-      win.document.write(staticHtml);
-    } else {
-      win.document.write(`<!doctype html>
+    win.document.write(`<!doctype html>
 <html>
 <head>
   <meta charset="utf-8" />
@@ -191,11 +167,29 @@ export default function ZoneViewer({
   <iframe src="${frameTarget}" allow="autoplay; fullscreen; gamepad; clipboard-read; clipboard-write"></iframe>
 </body>
 </html>`);
-    }
     win.document.close();
   }
 
-  function handleDownload() {
+  async function handleTryInlineBridge() {
+    if (hasProxy || !zone.isValid) return;
+    setLoading(true);
+    try {
+      const res = await fetch(zone.rawSourceUrl);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const text = await res.text();
+      setInlineSrcDoc(prepareStaticHtml(text, zone.rawSourceUrl));
+      setShowEmbedHelp(false);
+    } catch {
+      setLoading(false);
+      onToast(
+        'Inline bridge unavailable for this host',
+        'Use "Open Source" to launch in a new tab directly.',
+        'warning'
+      );
+    }
+  }
+
+  async function handleDownload() {
     if (hasProxy) {
       const a = document.createElement('a');
       a.href = `/api/game/${zone.id}?download=1`;
@@ -205,8 +199,16 @@ export default function ZoneViewer({
       document.body.removeChild(a);
       return;
     }
-    if (staticHtml) {
-      const blob = new Blob([staticHtml], { type: 'text/html;charset=utf-8' });
+
+    try {
+      let prepared = inlineSrcDoc;
+      if (!prepared) {
+        const res = await fetch(zone.rawSourceUrl);
+        if (!res.ok) throw new Error('Download blocked by remote host');
+        const rawText = await res.text();
+        prepared = prepareStaticHtml(rawText, zone.rawSourceUrl);
+      }
+      const blob = new Blob([prepared], { type: 'text/html;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -215,6 +217,13 @@ export default function ZoneViewer({
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
+      onToast('HTML downloaded', `${zone.name} saved cleanly.`, 'success');
+    } catch {
+      onToast(
+        'Download restricted by host',
+        'This external provider does not allow direct file saving; use "Open Source" instead.',
+        'warning'
+      );
     }
   }
 
@@ -232,9 +241,6 @@ export default function ZoneViewer({
       '*'
     );
   }
-
-  const canRenderIframe =
-    hasProxy || (!staticError && (Boolean(staticHtml) || useDirectFrameFallback));
 
   return (
     <div
@@ -327,28 +333,49 @@ export default function ZoneViewer({
               <span className="hidden sm:inline">Fullscreen</span>
             </button>
 
+            {zone.isValid && (
+              <a
+                href={zone.rawSourceUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Open original game source in new tab"
+                className="flex h-9 items-center gap-1.5 rounded-xl border border-white/15 bg-white/5 px-2.5 text-xs font-semibold text-slate-200 hover:bg-white/15 whitespace-nowrap shrink-0"
+              >
+                <ExternalLink className="h-4 w-4" />
+                <span className="hidden lg:inline">Open Source</span>
+              </a>
+            )}
+
             <button
               type="button"
               onClick={handleOpenAboutBlank}
               title="Open in about:blank tab"
-              className="flex h-9 items-center gap-1.5 rounded-xl border border-white/15 bg-white/5 px-2.5 text-xs font-semibold text-slate-200 hover:bg-white/15 whitespace-nowrap shrink-0 cursor-pointer"
+              className="hidden sm:flex h-9 items-center gap-1.5 rounded-xl border border-white/15 bg-white/5 px-2.5 text-xs font-semibold text-slate-200 hover:bg-white/15 whitespace-nowrap shrink-0 cursor-pointer"
             >
-              <ExternalLink className="h-4 w-4" />
-              <span className="hidden lg:inline">about:blank</span>
+              <span className="text-[11px] font-mono">about:blank</span>
             </button>
 
-            {(hasProxy || staticHtml) && (
-              <button
-                type="button"
-                onClick={handleDownload}
-                title="Download offline HTML"
-                aria-label="Download game HTML"
-                className="flex h-9 items-center gap-1.5 rounded-xl border border-white/15 bg-white/5 px-2.5 text-xs font-semibold text-slate-200 hover:bg-white/15 whitespace-nowrap shrink-0 cursor-pointer"
-              >
-                <Download className="h-4 w-4" />
-                <span className="hidden lg:inline">Download</span>
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={handleDownload}
+              title="Download offline HTML"
+              aria-label="Download game HTML"
+              className="hidden md:flex h-9 items-center gap-1.5 rounded-xl border border-white/15 bg-white/5 px-2.5 text-xs font-semibold text-slate-200 hover:bg-white/15 whitespace-nowrap shrink-0 cursor-pointer"
+            >
+              <Download className="h-4 w-4" />
+              <span className="hidden xl:inline">Download</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => onReportIssue(zone)}
+              title="Report broken game"
+              aria-label="Report broken game"
+              className="flex h-9 items-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-2.5 text-xs font-semibold text-amber-300 hover:bg-amber-500/20 whitespace-nowrap shrink-0 cursor-pointer"
+            >
+              <Bug className="h-4 w-4" />
+              <span className="hidden lg:inline">Report</span>
+            </button>
 
             <button
               type="button"
@@ -372,8 +399,50 @@ export default function ZoneViewer({
         </button>
       )}
 
+      {/* Helpful Static Hosting Notice when slow or third-party frame might be restricted */}
+      {showEmbedHelp && !blockedFromEmbed && !hasProxy && (
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-amber-500/20 bg-amber-950/40 px-4 py-1.5 text-xs text-amber-200">
+          <span>
+            Blank screen? Some third-party hosts restrict embedding in static mode.
+          </span>
+          <div className="flex flex-wrap items-center gap-2">
+            {!inlineSrcDoc && (
+              <button
+                type="button"
+                onClick={handleTryInlineBridge}
+                className="font-semibold underline hover:text-white cursor-pointer"
+              >
+                Try Inline Bridge
+              </button>
+            )}
+            <a
+              href={zone.rawSourceUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-semibold underline hover:text-white"
+            >
+              Open Direct Link
+            </a>
+            <button
+              type="button"
+              onClick={() => onReportIssue(zone)}
+              className="font-semibold underline hover:text-white cursor-pointer"
+            >
+              Report Broken
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowEmbedHelp(false)}
+              className="text-amber-300/75 hover:text-white cursor-pointer"
+            >
+              Dismiss
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="relative flex-1 w-full bg-black overflow-hidden">
-        {(loading || downloadingAssets) && !staticError && (
+        {(loading || downloadingAssets) && !blockedFromEmbed && (
           <div className="pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-[#09090f]/92 backdrop-blur-xs">
             <div className="h-9 w-9 animate-spin rounded-full border-2 border-violet-500 border-t-transparent" />
             <p className="text-sm font-medium text-slate-200">
@@ -393,49 +462,40 @@ export default function ZoneViewer({
           </div>
         )}
 
-        {staticError && (
+        {blockedFromEmbed ? (
           <div className="flex h-full w-full items-center justify-center bg-[#0b0b12] p-6">
             <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#141420] p-6 text-center shadow-2xl">
               <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500/15 text-amber-400">
                 <AlertTriangle className="h-6 w-6" />
               </div>
-              <h3 className="mt-4 text-base font-bold text-white">Unable to Embed Directly</h3>
-              <p className="mt-2 text-sm leading-relaxed text-slate-300">{staticError}</p>
+              <h3 className="mt-4 text-base font-bold text-white">
+                {!zone.isValid ? 'Invalid Game URL' : 'External Embedding Restricted'}
+              </h3>
+              <p className="mt-2 text-sm leading-relaxed text-slate-300">
+                {!zone.isValid
+                  ? 'This catalog entry does not have a valid http/https game source URL.'
+                  : 'This provider prohibits iframe embedding in static browser mode. You can open it directly in a new tab or report the link.'}
+              </p>
               <div className="mt-5 flex flex-wrap items-center justify-center gap-2.5">
-                {zone.isValid && zone.isEmbeddable && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => setReloadNonce((n) => n + 1)}
-                      className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-violet-600 px-4 text-xs font-semibold text-white hover:bg-violet-500 cursor-pointer"
-                    >
-                      <RotateCcw className="h-3.5 w-3.5" />
-                      <span>Retry</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setStaticError(null);
-                        setUseDirectFrameFallback(true);
-                        setLoading(true);
-                      }}
-                      className="inline-flex h-10 items-center rounded-xl border border-white/15 bg-white/5 px-4 text-xs font-semibold text-slate-200 hover:bg-white/10 cursor-pointer"
-                    >
-                      Try Direct Frame
-                    </button>
-                  </>
-                )}
                 {zone.isValid && (
                   <a
                     href={zone.rawSourceUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-white/15 bg-white/5 px-4 text-xs font-semibold text-slate-200 hover:bg-white/10"
+                    className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-violet-600 px-4 text-xs font-semibold text-white hover:bg-violet-500"
                   >
                     <ExternalLink className="h-3.5 w-3.5" />
-                    <span>Open Source URL</span>
+                    <span>Open Source in New Tab</span>
                   </a>
                 )}
+                <button
+                  type="button"
+                  onClick={() => onReportIssue(zone)}
+                  className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-white/15 bg-white/5 px-4 text-xs font-semibold text-slate-200 hover:bg-white/10 cursor-pointer"
+                >
+                  <Bug className="h-3.5 w-3.5 text-amber-400" />
+                  <span>Report Broken Game</span>
+                </button>
                 <button
                   type="button"
                   onClick={onClose}
@@ -446,21 +506,14 @@ export default function ZoneViewer({
               </div>
             </div>
           </div>
-        )}
-
-        {canRenderIframe && (
+        ) : (
           <iframe
             ref={iframeRef}
-            key={`${zone.id}-${reloadNonce}-${useDirectFrameFallback ? 'direct' : 'main'}`}
-            src={
-              hasProxy
-                ? proxyGameSrc
-                : useDirectFrameFallback
-                  ? zone.rawSourceUrl
-                  : undefined
-            }
-            srcDoc={!hasProxy && !useDirectFrameFallback && staticHtml ? staticHtml : undefined}
+            key={`${zone.id}-${reloadNonce}-${inlineSrcDoc ? 'inline' : hasProxy ? 'proxy' : 'direct'}`}
+            src={hasProxy ? proxyGameSrc : inlineSrcDoc ? undefined : zone.rawSourceUrl}
+            srcDoc={!hasProxy && inlineSrcDoc ? inlineSrcDoc : undefined}
             title={zone.name}
+            referrerPolicy="no-referrer"
             allow="autoplay; fullscreen; gamepad; clipboard-read; clipboard-write"
             onLoad={() => {
               setLoading(false);
@@ -468,8 +521,12 @@ export default function ZoneViewer({
                 iframeRef.current?.focus();
                 iframeRef.current?.contentWindow?.focus();
               } catch {
-                // Ignore cross-origin focus restrictions
+                // Cross-origin frame focus restriction expected on static external URLs
               }
+            }}
+            onError={() => {
+              setLoading(false);
+              setShowEmbedHelp(true);
             }}
             className="h-full w-full border-0 bg-black"
           />
