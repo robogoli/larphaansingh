@@ -45,6 +45,7 @@ const BLOCKED_CLIENT_DOMAINS = [
   'adinplay.com',
   'cpmstar.com',
   'adnxs.com',
+  'mediavine.com',
   'coi-serviceworker',
 ];
 
@@ -192,6 +193,11 @@ function buildInjectedShim(): string {
   if (window.__DAKNUX_SHIM__) return;
   window.__DAKNUX_SHIM__ = true;
   window.maeExportApis_ = window.maeExportApis_ || function(){};
+  window.gadgets = window.gadgets || {
+    util: { getUrlParameters: function() { return { exp_rpc_js: 1 }; } },
+    rpc: { setRelayUrl: function(){}, call: function(){}, register: function(){} },
+    io: { makeRequest: function(){} }
+  };
   try {
     if (window.parent && window.parent !== window && !window.parent.maeExportApis_) {
       window.parent.maeExportApis_ = function(){};
@@ -259,17 +265,24 @@ function buildInjectedShim(): string {
     return raw;
   }
 
-  // Track active downloads to keep ZoneViewer loading overlay accurate for heavy multi-part games
+  // Track active downloads and interactive readiness so ZoneViewer clears loading veil cleanly on first entry
   var activeFetches = 0;
   function notifyHostProgress() {
     try {
       if (window.parent && window.parent !== window) {
-        var hasVisual = Boolean(document.querySelector('canvas, ruffle-player, iframe, svg'));
+        var hasVisual = Boolean(document.querySelector('canvas, ruffle-player, iframe, svg, button, #startButton, #loading-text, #status'));
         window.parent.postMessage({
           type: 'DAKNUX_FRAME_PROGRESS',
           activeCount: activeFetches,
           hasVisual: hasVisual
         }, '*');
+      }
+    } catch (e) {}
+  }
+  function notifyHostReady() {
+    try {
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({ type: 'DAKNUX_FRAME_READY' }, '*');
       }
     } catch (e) {}
   }
@@ -491,7 +504,17 @@ function buildInjectedShim(): string {
     return origWriteln.apply(this, args);
   };
 
+  if (document.readyState === 'interactive' || document.readyState === 'complete') {
+    notifyHostReady();
+    notifyHostProgress();
+  } else {
+    document.addEventListener('DOMContentLoaded', function() {
+      notifyHostReady();
+      notifyHostProgress();
+    });
+  }
   window.addEventListener('load', function() {
+    notifyHostReady();
     notifyHostProgress();
     setTimeout(notifyHostProgress, 800);
   });
@@ -616,6 +639,11 @@ function rewriteHtmlForProxy(html: string, sourceUrl?: string): string {
       return `<link${pre}href=${q}${toProxyPath(normalized)}${q}${post}>`;
     }
   );
+
+  // Stub legacy root-relative template boilerplate (/assets/css.css, /assets/js.js, /js/main.js)
+  out = out
+    .replace(/\bsrc=(["'])\/(?:assets\/js\.js|js\/main\.js)\1/gi, 'src=$1/api/stub/empty.js$1')
+    .replace(/\bhref=(["'])\/assets\/css\.css\1/gi, 'href=$1/api/stub/empty.css$1');
 
   // Strip integrity attributes on <script> / <link> tags pointing to our proxy/stubs
   out = out.replace(
@@ -753,8 +781,14 @@ window.google.ima = window.google.ima || {
     res.status(200).send('');
   });
 
-  app.get('/js/main.js', (_req: Request, res: Response) => {
+  app.get(['/js/main.js', '/assets/js.js'], (_req: Request, res: Response) => {
     res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    res.send('/* daknux-compat */');
+  });
+
+  app.get('/assets/css.css', (_req: Request, res: Response) => {
+    res.setHeader('Content-Type', 'text/css; charset=utf-8');
     res.setHeader('Cache-Control', 'public, max-age=86400');
     res.send('/* daknux-compat */');
   });
@@ -1151,6 +1185,10 @@ window.google.ima = window.google.ima || {
     window.fetch = function(input, init) {
       try {
         var u = typeof input === 'string' ? input : (input && input.url) || '';
+        var lower = String(u).toLowerCase();
+        if (lower.indexOf('mediavine.com') !== -1 || lower.indexOf('googletagmanager.com') !== -1 || lower.indexOf('challenges.cloudflare.com/turnstile') !== -1) {
+          return Promise.resolve(new Response('{}', { status: 200, headers: { 'Content-Type': 'application/json' } }));
+        }
         if (u.indexOf('https://party.krillion.io') === 0) {
           var rewritten = '/api/ext/https/party.krillion.io' + u.slice('https://party.krillion.io'.length);
           if (typeof input === 'string') input = rewritten;

@@ -30,31 +30,101 @@ interface ZoneViewerProps {
   onToast: (title: string, message?: string, type?: 'info' | 'success' | 'warning' | 'error') => void;
 }
 
-const TOUCH_BRIDGE_SCRIPT = `<script>
+const TOUCH_BRIDGE_SCRIPT = `<script data-daknux-static-shim="1">
 (function() {
   window.maeExportApis_ = window.maeExportApis_ || function(){};
+  window.gadgets = window.gadgets || {
+    util: { getUrlParameters: function() { return { exp_rpc_js: 1 }; } },
+    rpc: { setRelayUrl: function(){}, call: function(){}, register: function(){} },
+    io: { makeRequest: function(){} }
+  };
+  try {
+    if (window.parent && window.parent !== window && !window.parent.maeExportApis_) {
+      window.parent.maeExportApis_ = function(){};
+    }
+  } catch (e) {}
+  function notifyReady() {
+    try {
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({ type: 'DAKNUX_FRAME_READY' }, '*');
+      }
+    } catch (e) {}
+  }
+  if (document.readyState === 'interactive' || document.readyState === 'complete') {
+    notifyReady();
+  } else {
+    document.addEventListener('DOMContentLoaded', notifyReady);
+  }
+  window.addEventListener('load', notifyReady);
   window.addEventListener('message', function(ev) {
     if (!ev || !ev.data || ev.data.type !== 'DAKNUX_KEY_EVENT') return;
     var d = ev.data;
     var type = d.action === 'up' ? 'keyup' : 'keydown';
     var opts = { key: d.key, code: d.code, keyCode: d.keyCode, which: d.keyCode, bubbles: true, cancelable: true };
     try {
+      var target = document.activeElement && document.activeElement !== document.body
+        ? document.activeElement
+        : (document.querySelector('canvas') || document.body || window);
+      target.dispatchEvent(new KeyboardEvent(type, opts));
       window.dispatchEvent(new KeyboardEvent(type, opts));
-      document.dispatchEvent(new KeyboardEvent(type, opts));
-      if (document.activeElement) document.activeElement.dispatchEvent(new KeyboardEvent(type, opts));
     } catch (e) {}
   });
+  window.addEventListener('pointerdown', function() {
+    try { window.focus(); } catch (e) {}
+  }, { passive: true });
 })();
 </script>`;
 
+const EMPTY_JS_DATA = 'data:application/javascript;charset=utf-8,/*stub*/';
+const EMPTY_CSS_DATA = 'data:text/css;charset=utf-8,/*stub*/';
+
+function isRawCdnHtmlZone(zone: EnrichedZone): boolean {
+  if (zone.url.startsWith('./')) return false;
+  if (zone.url.startsWith('{HTML_URL}') || zone.url.startsWith('{COVER_URL}')) return true;
+  try {
+    const u = new URL(zone.rawSourceUrl);
+    const h = u.hostname.toLowerCase();
+    return (
+      h === 'cdn.jsdelivr.net' ||
+      h === 'fastly.jsdelivr.net' ||
+      h === 'gcore.jsdelivr.net' ||
+      h === 'raw.githubusercontent.com'
+    );
+  } catch {
+    return false;
+  }
+}
+
 function prepareStaticHtml(rawText: string, sourceUrl: string): string {
   let html = rawText;
-  if (html.trimStart().startsWith('<Module')) {
-    const match = html.match(/<!\[CDATA\[([\s\S]*?)\]\]>/i);
-    if (match?.[1]) {
-      html = match[1];
+
+  // Unwrap Google Gadget XML (<Module>...<Content type="html"><![CDATA[...]]></Content></Module>)
+  if (/<Module\b/i.test(html)) {
+    const cdataStart = html.indexOf('<![CDATA[');
+    if (cdataStart !== -1) {
+      html = html.slice(cdataStart + 9);
+    } else {
+      html = html.replace(/^(?:[\s\S]*?)<Module\b[^>]*>(?:\s*<!--[\s\S]*?-->\s*)*(?:<Module\b[^>]*>)?/i, '');
+    }
+    html = html.replace(/(?:\]\]>)?\s*(?:<\/Content>\s*)?(?:<\/Module>\s*)+$/i, '').trim();
+  }
+
+  // Fix Ruffle Flash templates with unresolved "$1" placeholder
+  if (html.includes('player.load("$1")') || html.includes("player.load('$1')")) {
+    const swfMatch = html.match(/(?:src|value)=(["'])(https?:\/\/[^"']+\.swf(?:\?[^"']*)?)\1/i);
+    if (swfMatch && swfMatch[2]) {
+      html = html.replace(/player\.load\((["'])\$1\1\)/g, `player.load(${JSON.stringify(swfMatch[2])})`);
     }
   }
+
+  // Stub dead root-relative boilerplate and school-blocked trackers/ad pixels in static srcDoc mode
+  html = html
+    .replace(/\bsrc=(["'])\/(?:assets\/js\.js|js\/main\.js)\1/gi, `src=$1${EMPTY_JS_DATA}$1`)
+    .replace(/\bhref=(["'])\/assets\/css\.css\1/gi, `href=$1${EMPTY_CSS_DATA}$1`)
+    .replace(
+      /\bsrc=(["'])(?:https?:)?\/\/[^"']*(?:google\.com\/jsapi|googletagmanager\.com|google-analytics\.com|googlesyndication\.com|doubleclick\.net|cloudflareinsights\.com|mediavine\.com|coi-serviceworker)[^"']*\1/gi,
+      `src=$1${EMPTY_JS_DATA}$1`
+    );
 
   let baseHref = sourceUrl;
   try {
@@ -67,13 +137,17 @@ function prepareStaticHtml(rawText: string, sourceUrl: string): string {
     baseHref = sourceUrl;
   }
 
-  const hasBaseTag = /<base\b/i.test(html);
-  const injection = `${hasBaseTag ? '' : `<base href="${baseHref}" />`}${TOUCH_BRIDGE_SCRIPT}`;
-
-  if (/<head[^>]*>/i.test(html)) {
-    return html.replace(/<head([^>]*)>/i, `<head$1>${injection}`);
+  const baseMatch = html.match(/<base\b[^>]*>/i);
+  if (baseMatch && baseMatch.index !== undefined) {
+    const insertAt = baseMatch.index + baseMatch[0].length;
+    return `${html.slice(0, insertAt)}\n${TOUCH_BRIDGE_SCRIPT}\n${html.slice(insertAt)}`;
   }
-  return `<!doctype html><html><head><meta charset="utf-8" />${injection}</head><body>${html}</body></html>`;
+
+  const injection = `<base href="${baseHref}" />\n${TOUCH_BRIDGE_SCRIPT}`;
+  if (/<head[^>]*>/i.test(html)) {
+    return html.replace(/<head([^>]*)>/i, `<head$1>\n${injection}`);
+  }
+  return `<!doctype html><html><head><meta charset="utf-8" />\n${injection}</head><body>${html}</body></html>`;
 }
 
 export default function ZoneViewer({
@@ -92,10 +166,13 @@ export default function ZoneViewer({
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [loading, setLoading] = useState(true);
   const [downloadingAssets, setDownloadingAssets] = useState(false);
+  const [allowEarlyReveal, setAllowEarlyReveal] = useState(false);
   const [showGamepad, setShowGamepad] = useState(false);
   const [toolbarHidden, setToolbarHidden] = useState(false);
   const [reloadNonce, setReloadNonce] = useState(0);
-  const [inlineSrcDoc, setInlineSrcDoc] = useState<string | null>(null);
+  const [inlineHtml, setInlineHtml] = useState<string | null>(null);
+  const [inlineBlobUrl, setInlineBlobUrl] = useState<string | null>(null);
+  const [autoBridgeFailed, setAutoBridgeFailed] = useState(false);
   const [showEmbedHelp, setShowEmbedHelp] = useState(false);
 
   const isSelfHosted = zone.url.startsWith('./');
@@ -105,30 +182,81 @@ export default function ZoneViewer({
     ? `/krillion-live/?v=${reloadNonce}`
     : `/api/game/${zone.id}?v=${reloadNonce}`;
   const blockedFromEmbed = !useProxyFrame && (!zone.isValid || !zone.isEmbeddable);
+  const needsAutoStaticBridge = !useProxyFrame && !blockedFromEmbed && !isSelfHosted && isRawCdnHtmlZone(zone);
 
   useEffect(() => {
+    let cancelled = false;
+    let createdBlobUrl: string | null = null;
     setLoading(!blockedFromEmbed);
     setDownloadingAssets(false);
-    setInlineSrcDoc(null);
+    setAllowEarlyReveal(false);
+    setInlineHtml(null);
+    setInlineBlobUrl(null);
+    setAutoBridgeFailed(false);
     setShowEmbedHelp(false);
 
     if (blockedFromEmbed) return;
 
-    // Gentle non-blocking timeout hint if a third-party site refuses framing or takes unusually long
-    const timer = window.setTimeout(() => {
-      setShowEmbedHelp(true);
-    }, 6500);
+    // Auto-bridge CDN raw text/plain HTML games via same-origin Blob URL on first entry in static mode
+    if (needsAutoStaticBridge) {
+      fetch(zone.rawSourceUrl)
+        .then((res) => {
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          return res.text();
+        })
+        .then((raw) => {
+          if (cancelled) return;
+          const prepared = prepareStaticHtml(raw, zone.rawSourceUrl);
+          createdBlobUrl = URL.createObjectURL(new Blob([prepared], { type: 'text/html;charset=utf-8' }));
+          setInlineHtml(prepared);
+          setInlineBlobUrl(createdBlobUrl);
+        })
+        .catch(() => {
+          if (cancelled) return;
+          setAutoBridgeFailed(true);
+          setShowEmbedHelp(true);
+        });
+    }
 
-    return () => window.clearTimeout(timer);
-  }, [zone.id, reloadNonce, blockedFromEmbed]);
+    const revealBtnTimer = window.setTimeout(() => {
+      if (!cancelled) setAllowEarlyReveal(true);
+    }, 2000);
+
+    // Safety fallback: never keep user trapped behind loading veil if a background subresource stalls
+    const safetyRevealTimer = window.setTimeout(() => {
+      if (!cancelled) setLoading(false);
+    }, 5500);
+
+    // Non-blocking tip only for third-party non-self-hosted pages in static mode if slow
+    const helpTimer = !isSelfHosted
+      ? window.setTimeout(() => {
+          if (!cancelled) setShowEmbedHelp(true);
+        }, 6500)
+      : undefined;
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(revealBtnTimer);
+      window.clearTimeout(safetyRevealTimer);
+      if (helpTimer !== undefined) window.clearTimeout(helpTimer);
+      if (createdBlobUrl) URL.revokeObjectURL(createdBlobUrl);
+    };
+  }, [zone.id, zone.rawSourceUrl, reloadNonce, blockedFromEmbed, needsAutoStaticBridge, isSelfHosted]);
 
   useEffect(() => {
     function onFrameMessage(ev: MessageEvent) {
-      if (!ev?.data || ev.data.type !== 'DAKNUX_FRAME_PROGRESS') return;
+      if (!ev?.data) return;
       if (ev.source !== iframeRef.current?.contentWindow) return;
-      const activeCount = Number(ev.data.activeCount || 0);
-      const hasVisual = Boolean(ev.data.hasVisual);
-      setDownloadingAssets(activeCount > 0 && !hasVisual);
+      if (ev.data.type === 'DAKNUX_FRAME_READY') {
+        setLoading(false);
+        return;
+      }
+      if (ev.data.type === 'DAKNUX_FRAME_PROGRESS') {
+        const activeCount = Number(ev.data.activeCount || 0);
+        const hasVisual = Boolean(ev.data.hasVisual);
+        if (hasVisual) setLoading(false);
+        setDownloadingAssets(activeCount > 0 && !hasVisual);
+      }
     }
     window.addEventListener('message', onFrameMessage);
     return () => window.removeEventListener('message', onFrameMessage);
@@ -150,13 +278,28 @@ export default function ZoneViewer({
       onToast('Popup blocked', 'Allow popups for this site to open games in an about:blank tab.', 'warning');
       return;
     }
+    const safeTitle = (cloakTitle || zone.name).replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const safeIcon = cloakFavicon || assetPath('assets/gmail-icon.svg');
+
+    if (!useProxyFrame && inlineHtml) {
+      const titleTag = `<title>${safeTitle}</title><link rel="icon" href="${safeIcon}" />`;
+      const docHtml = /<head[^>]*>/i.test(inlineHtml)
+        ? inlineHtml.replace(/<head[^>]*>/i, (m) => `${m}${titleTag}`)
+        : `${titleTag}${inlineHtml}`;
+      win.document.open();
+      win.document.write(docHtml);
+      win.document.close();
+      return;
+    }
+
     const frameTarget = isKrillionLive
       ? `${window.location.origin}/krillion-live/`
       : useProxyFrame
         ? `${window.location.origin}/api/game/${zone.id}`
-        : zone.rawSourceUrl;
-    const safeTitle = (cloakTitle || zone.name).replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    const safeIcon = cloakFavicon || assetPath('assets/gmail-icon.svg');
+        : isSelfHosted
+          ? new URL(zone.rawSourceUrl, window.location.href).href
+          : zone.rawSourceUrl;
+
     win.document.open();
     win.document.write(`<!doctype html>
 <html>
@@ -184,7 +327,13 @@ export default function ZoneViewer({
       const res = await fetch(zone.rawSourceUrl);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const text = await res.text();
-      setInlineSrcDoc(prepareStaticHtml(text, zone.rawSourceUrl));
+      const prepared = prepareStaticHtml(text, zone.rawSourceUrl);
+      const blobUrl = URL.createObjectURL(new Blob([prepared], { type: 'text/html;charset=utf-8' }));
+      setInlineHtml(prepared);
+      setInlineBlobUrl((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return blobUrl;
+      });
       setShowEmbedHelp(false);
     } catch {
       setLoading(false);
@@ -208,7 +357,7 @@ export default function ZoneViewer({
     }
 
     try {
-      let prepared = inlineSrcDoc;
+      let prepared = inlineHtml;
       if (!prepared) {
         const res = await fetch(zone.rawSourceUrl);
         if (!res.ok) throw new Error('Download blocked by remote host');
@@ -407,13 +556,13 @@ export default function ZoneViewer({
       )}
 
       {/* Helpful Static Hosting Notice when slow or third-party frame might be restricted */}
-      {showEmbedHelp && !blockedFromEmbed && !hasProxy && (
+      {showEmbedHelp && !blockedFromEmbed && !hasProxy && !isSelfHosted && (
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-amber-500/20 bg-amber-950/40 px-4 py-1.5 text-xs text-amber-200">
           <span>
             Blank screen? Some third-party hosts restrict embedding in static mode.
           </span>
           <div className="flex flex-wrap items-center gap-2">
-            {!inlineSrcDoc && (
+            {!inlineBlobUrl && (
               <button
                 type="button"
                 onClick={handleTryInlineBridge}
@@ -457,10 +606,13 @@ export default function ZoneViewer({
                 ? `Loading ${zone.name}...`
                 : `Downloading ${zone.name} assets...`}
             </p>
-            {!loading && downloadingAssets && (
+            {(allowEarlyReveal || (!loading && downloadingAssets)) && (
               <button
                 type="button"
-                onClick={() => setDownloadingAssets(false)}
+                onClick={() => {
+                  setLoading(false);
+                  setDownloadingAssets(false);
+                }}
                 className="pointer-events-auto rounded-lg border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-medium text-slate-100 hover:bg-white/20 cursor-pointer"
               >
                 Show Game View
@@ -513,12 +665,11 @@ export default function ZoneViewer({
               </div>
             </div>
           </div>
-        ) : (
+        ) : !useProxyFrame && needsAutoStaticBridge && !inlineBlobUrl && !autoBridgeFailed ? null : (
           <iframe
             ref={iframeRef}
-            key={`${zone.id}-${reloadNonce}-${inlineSrcDoc ? 'inline' : useProxyFrame ? 'proxy' : 'direct'}`}
-            src={useProxyFrame ? proxyGameSrc : inlineSrcDoc ? undefined : zone.rawSourceUrl}
-            srcDoc={!useProxyFrame && inlineSrcDoc ? inlineSrcDoc : undefined}
+            key={`${zone.id}-${reloadNonce}-${inlineBlobUrl ? 'inline' : useProxyFrame ? 'proxy' : 'direct'}`}
+            src={useProxyFrame ? proxyGameSrc : inlineBlobUrl || zone.rawSourceUrl}
             title={zone.name}
             referrerPolicy="no-referrer"
             allow="autoplay; fullscreen; gamepad; clipboard-read; clipboard-write"
@@ -533,7 +684,7 @@ export default function ZoneViewer({
             }}
             onError={() => {
               setLoading(false);
-              setShowEmbedHelp(true);
+              if (!isSelfHosted) setShowEmbedHelp(true);
             }}
             className="h-full w-full border-0 bg-black"
           />
