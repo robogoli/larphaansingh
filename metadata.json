@@ -1,0 +1,6 @@
+{
+  "name": "DAKNUX",
+  "description": "DAKNUX interactive web arcade and zone catalog with responsive cross-device play, stealth tab cloaking, and local proxy delivery.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
