@@ -1270,6 +1270,8 @@ window.google.ima = window.google.ima || {
 
     try {
       const reqHeaders: Record<string, string> = {
+        Origin: KRILLION_ORIGIN,
+        Referer: `${KRILLION_ORIGIN}/`,
         'User-Agent':
           typeof req.headers['user-agent'] === 'string'
             ? req.headers['user-agent']

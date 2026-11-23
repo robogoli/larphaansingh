@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - main
+  schedule:
+    - cron: '6 5 * * *'
   workflow_dispatch:
 
 permissions:
@@ -32,6 +34,9 @@ jobs:
           test -f package-lock.json
           npm ci --legacy-peer-deps
 
+      - name: Sync daily Krillion questions
+        run: node scripts/sync-krillion-daily.mjs
+
       - name: TypeScript type check
         run: npm run lint
 
@@ -47,6 +52,8 @@ jobs:
           test -f dist/manifest.webmanifest
           test -f dist/data/zones.json
           test -f dist/data/quotes.json
+          test -f dist/games/krillion/index.html
+          test -f dist/games/krillion/daily.json
           test -f dist/assets/gmail-icon.svg
           test -f dist/assets/gmail-32.png
           test -f dist/assets/gmail-180.png

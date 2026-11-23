@@ -1740,9 +1740,13 @@
       if (store.colorblind) document.documentElement.classList.add('colorblind');
 
       // === Helper utilities ===
-      function getUtcDateKey(offsetDays = 0) {
-        const d = new Date(Date.now() - offsetDays * 86400000);
+      function getKrillionDailyDateKey(offsetDays = 0) {
+        // Real Krillion resets at 05:00:00Z daily
+        const d = new Date(Date.now() - 5 * 3600000 - offsetDays * 86400000);
         return d.toISOString().slice(0, 10);
+      }
+      function getUtcDateKey(offsetDays = 0) {
+        return getKrillionDailyDateKey(offsetDays);
       }
       function getDayNumber(dateStr) {
         const anchor = Date.UTC(2026, 10, 22); // Dive #130 anchor
@@ -1764,12 +1768,85 @@
         return s.toLowerCase().trim().replace(/[^a-z0-9\s'-]/g, '').replace(/\s+/g, ' ');
       }
 
+      const DAILY_CACHE_KEY = 'krillionDailyCacheV1';
+      let liveDailyData = null;
+      let dailySyncPromise = Promise.resolve();
+
+      function normalizeDailyPayload(data) {
+        if (!data || !Array.isArray(data.prompts) || data.prompts.length === 0) return null;
+        return {
+          date: typeof data.date === 'string' ? data.date : getKrillionDailyDateKey(),
+          dayNumber: typeof data.dayNumber === 'number' ? data.dayNumber : getDayNumber(getKrillionDailyDateKey()),
+          prompts: data.prompts.map((p, idx) => ({
+            id: p.id || `p${idx + 1}`,
+            q: String(p.text || p.q || '').trim(),
+          })).filter((p) => p.q),
+        };
+      }
+
+      try {
+        const cachedRaw = JSON.parse(localStorage.getItem(DAILY_CACHE_KEY) || 'null');
+        const normalizedCached = normalizeDailyPayload(cachedRaw);
+        if (normalizedCached) liveDailyData = normalizedCached;
+      } catch {}
+
+      function applyLiveDailyPayload(payload) {
+        const normalized = normalizeDailyPayload(payload);
+        if (!normalized) return false;
+        liveDailyData = normalized;
+        try { localStorage.setItem(DAILY_CACHE_KEY, JSON.stringify(payload)); } catch {}
+        if (typeof setupMode === 'function' && session && session.mode === 'daily' && el.root.dataset.phase === 'intro') {
+          setupMode({ mode: 'daily' });
+        }
+        return true;
+      }
+
+      async function fetchWithTimeout(url, ms) {
+        const ctrl = new AbortController();
+        const t = setTimeout(() => ctrl.abort(), ms);
+        try {
+          const res = await fetch(url, { signal: ctrl.signal, cache: 'no-store' });
+          if (!res.ok) return null;
+          return await res.json();
+        } catch {
+          return null;
+        } finally {
+          clearTimeout(t);
+        }
+      }
+
+      async function syncExactDailyQuestions() {
+        const expectedDate = getKrillionDailyDateKey();
+
+        // 1. Load same-origin daily.json first (synced daily at 05:06 UTC by GitHub Actions — zero 404s on static hosting)
+        const bundledData = await fetchWithTimeout(`./daily.json?v=${Date.now()}`, 2500);
+        if (applyLiveDailyPayload(bundledData) && liveDailyData.date === expectedDate) return;
+
+        // 2. If running alongside a local proxy server and daily.json is behind active date, check /api/today
+        const isStaticPagesHost = location.hostname.endsWith('github.io') || location.protocol === 'blob:';
+        if (!isStaticPagesHost && (location.port === '3000' || location.hostname === 'localhost')) {
+          const apiData = await fetchWithTimeout('/api/today', 1800);
+          if (applyLiveDailyPayload(apiData) && liveDailyData.date === expectedDate) return;
+        }
+
+        // 3. If still behind active reset date (e.g. right after 05:00 UTC), try public CORS relays non-blockingly
+        const relayUrls = [
+          `https://api.allorigins.win/raw?url=${encodeURIComponent('https://krillion.io/api/today')}`,
+          `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent('https://krillion.io/api/today')}`,
+        ];
+        for (const u of relayUrls) {
+          const relayData = await fetchWithTimeout(u, 2500);
+          if (applyLiveDailyPayload(relayData) && liveDailyData.date === expectedDate) return;
+        }
+      }
+
       function evaluateAnswer(prompt, raw, usedSet) {
         const clean = normalize(raw);
         if (!clean || clean.length < 2) return { ok: false, reason: 'type something real.' };
         if (/^(none|idk|na|asdf|test|yes|no|thing|stuff)$/.test(clean)) return { ok: false, reason: 'be specific — no filler.' };
         if (usedSet.has(clean)) return { ok: false, reason: 'already used this dive.' };
-        const pWords = normalize(prompt.q).split(' ').filter((w) => w.length > 3);
+        const promptCore = String(prompt.q || prompt.text || '').replace(/\([^)]*\)/g, '');
+        const pWords = normalize(promptCore).split(' ').filter((w) => w.length > 3 && !['name', 'that', 'with', 'from', 'have', 'least', 'part', 'uses', 'long'].includes(w));
         if (pWords.includes(clean)) return { ok: false, reason: 'cannot echo a word from the prompt.' };
 
         const hit = (list) => Array.isArray(list) && list.some((w) => clean === w || clean.includes(w));
@@ -1780,12 +1857,12 @@
         if (hit(prompt.deepcut)) return { ok: true, tier: 'deepcut', clean, note: '0.6% of divers reached this' };
         if (hit(prompt.krillion)) return { ok: true, tier: 'krillion', clean, note: '0.04% — trench gem!' };
 
-        // Smart tier placement for unlisted valid creative answers
+        // Smart tier placement for live daily & creative answers
         const len = clean.length;
         const hash = Array.from(clean).reduce((acc, c) => (acc * 33 + c.charCodeAt(0)) % 100, 0);
-        if (len >= 13 || hash < 14) return { ok: true, tier: 'deepcut', clean, note: '0.8% — deep unlisted pull' };
+        if (len >= 13 || hash < 14) return { ok: true, tier: 'deepcut', clean, note: '0.8% — deep pull' };
         if (len >= 7 || hash < 58) return { ok: true, tier: 'rare', clean, note: '3.9% — uncommon pull' };
-        return { ok: true, tier: 'schooler', clean, note: '14% — solid unlisted match' };
+        return { ok: true, tier: 'schooler', clean, note: '14% — solid match' };
       }
 
       // === Ocean Canvas Stage & Descent Engine ===
@@ -2173,12 +2250,17 @@
           session.dayNum = dn;
           el.tagline.textContent = mode === 'archive' ? `ARCHIVE DIVE #${dn}` : 'THE DAILY DIVE';
           el.subline.textContent = '7 prompts · 25 seconds each · rarer answers sink deeper';
-          if (dateStr === '2026-11-22') {
+          if (mode === 'daily' && liveDailyData && liveDailyData.prompts.length > 0) {
+            session.dayNum = liveDailyData.dayNumber;
+            session.prompts = liveDailyData.prompts;
+            session.label = `Dive #${liveDailyData.dayNumber}`;
+          } else if (dateStr === '2026-11-22') {
             session.prompts = CLASSIC_PROMPTS.slice(0, 7);
+            session.label = `Dive #${dn}`;
           } else {
             session.prompts = seededShuffle(CLASSIC_PROMPTS, `krillion-daily-${dateStr}`).slice(0, 7);
+            session.label = `Dive #${dn}`;
           }
-          session.label = `Dive #${dn}`;
         }
 
         targetDepth = -45;
@@ -2428,7 +2510,15 @@
         });
       }
 
-      el.beginBtn.addEventListener('click', () => {
+      el.beginBtn.addEventListener('click', async () => {
+        if (session.mode === 'daily' && (!liveDailyData || liveDailyData.date !== getKrillionDailyDateKey())) {
+          el.beginBtn.disabled = true;
+          try {
+            await Promise.race([dailySyncPromise, new Promise((r) => setTimeout(r, 800))]);
+          } finally {
+            el.beginBtn.disabled = false;
+          }
+        }
         audio.play('begin');
         startRound(0);
       });
@@ -2615,6 +2705,7 @@
       });
 
       setupMode({ mode: 'daily' });
+      dailySyncPromise = syncExactDailyQuestions();
     </script>
   </body>
 </html>
