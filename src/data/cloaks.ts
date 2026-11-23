@@ -1,4 +1,5 @@
 import type { CloakPreset } from '../types/zone';
+import { assetPath } from '../utils/runtime';
 
 function svgIcon(svgBody: string): string {
   return `data:image/svg+xml,${encodeURIComponent(
@@ -10,8 +11,8 @@ export const CLOAK_PRESETS: CloakPreset[] = [
   {
     id: 'default',
     label: 'DAKNUX (Default)',
-    title: 'DAKNUX',
-    favicon: '/assets/daknux/fav.png',
+    title: 'DAKNUX — Curated Web Arcade',
+    favicon: assetPath('assets/daknux/fav.png'),
   },
   {
     id: 'classlink',
@@ -56,7 +57,7 @@ export const CLOAK_PRESETS: CloakPreset[] = [
 ];
 
 export function applyTabCloak(title: string, faviconUrl: string): void {
-  document.title = title || 'DAKNUX';
+  document.title = title || 'DAKNUX — Curated Web Arcade';
   const link = document.getElementById('dynamic-favicon') as HTMLLinkElement | null;
   if (link && faviconUrl) {
     link.href = faviconUrl;

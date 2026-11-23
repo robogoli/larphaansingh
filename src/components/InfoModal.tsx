@@ -1,133 +1,183 @@
-import { ExternalLink, X } from 'lucide-react';
-import type { StatsMap, Zone } from '../types/zone';
-
-export type ModalKind =
-  | { type: 'zone'; zone: Zone }
-  | { type: 'credits' }
-  | { type: 'privacy' }
-  | null;
+import { ExternalLink, Heart, Play, ShieldCheck, User, X } from 'lucide-react';
+import { CATEGORY_MAP, SPECIAL_TAG_LABELS } from '../data/categories';
+import type { EnrichedZone, StatsMap } from '../types/zone';
+import { resolveCoverUrl } from '../utils/runtime';
 
 interface InfoModalProps {
-  modal: ModalKind;
+  zone: EnrichedZone | null;
+  hasProxy: boolean;
   stats: StatsMap;
+  isFavorite: boolean;
+  onToggleFavorite: (id: number) => void;
   onClose: () => void;
+  onPlay: (zone: EnrichedZone) => void;
 }
 
-export default function InfoModal({ modal, stats, onClose }: InfoModalProps) {
-  if (!modal) return null;
+export default function InfoModal({
+  zone,
+  hasProxy,
+  stats,
+  isFavorite,
+  onToggleFavorite,
+  onClose,
+  onPlay,
+}: InfoModalProps) {
+  if (!zone) return null;
 
-  let title = 'Information';
-  if (modal.type === 'zone') title = `${modal.zone.name} Info`;
-  if (modal.type === 'credits') title = 'Credits & Information';
-  if (modal.type === 'privacy') title = 'Privacy & Local Storage';
+  const yearPlays = stats.year?.[String(zone.id)] || 0;
+  const monthPlays = stats.month?.[String(zone.id)] || 0;
+  const weekPlays = stats.week?.[String(zone.id)] || 0;
+  const coverSrc = resolveCoverUrl(zone.cover, hasProxy);
 
   return (
     <div
-      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/65 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-[70] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
-      aria-label={title}
+      aria-labelledby="info-modal-title"
       onClick={onClose}
     >
       <div
-        className="flex max-h-[82vh] w-full max-w-md flex-col overflow-hidden rounded-2xl border border-slate-200 dark:border-[#3b2a5e] bg-white dark:bg-[#150d26] text-slate-900 dark:text-slate-100 shadow-2xl"
+        className="w-full max-w-lg overflow-hidden rounded-2xl border border-slate-200 bg-white text-slate-900 shadow-2xl dark:border-white/15 dark:bg-[#12121c] dark:text-slate-100"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#2e2050] bg-gradient-to-r from-[#581c87] to-[#7e22ce] px-5 py-3.5 text-white">
-          <h2 className="truncate text-base font-bold">{title}</h2>
+        {/* Header with Cover Thumbnail */}
+        <div className="flex items-start gap-4 border-b border-slate-200/80 p-5 dark:border-white/10">
+          {coverSrc && (
+            <img
+              src={coverSrc}
+              alt={`${zone.name} cover`}
+              referrerPolicy="no-referrer"
+              className="h-18 w-18 shrink-0 rounded-xl object-cover ring-1 ring-black/10 dark:ring-white/15"
+            />
+          )}
+          <div className="min-w-0 flex-1">
+            <h2 id="info-modal-title" className="text-lg font-bold leading-snug">
+              {zone.name}
+            </h2>
+            <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+              {zone.categories.map((c) => CATEGORY_MAP[c]?.label || c).join(' · ')}
+            </p>
+            {zone.author && (
+              <div className="mt-1.5 flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-300">
+                <User className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                {zone.authorLink ? (
+                  <a
+                    href={zone.authorLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-violet-600 hover:underline dark:text-violet-400"
+                  >
+                    <span>{zone.author}</span>
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                ) : (
+                  <span>{zone.author}</span>
+                )}
+              </div>
+            )}
+          </div>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close modal"
-            className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/10 text-white hover:bg-white/20 cursor-pointer"
+            aria-label="Close game details"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-white/10 cursor-pointer"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
 
-        <div className="space-y-4 overflow-y-auto p-5 text-sm leading-relaxed">
-          {modal.type === 'zone' && (
-            <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-3 rounded-xl border border-slate-200 dark:border-[#2e2050] bg-slate-50 dark:bg-[#1a0f2e] p-3.5">
-                <div>
-                  <div className="text-xs text-slate-500 dark:text-purple-300/75">Zone ID</div>
-                  <div className="font-mono-tabular font-semibold">{modal.zone.id}</div>
+        <div className="max-h-[65vh] overflow-y-auto space-y-4 p-5">
+          {/* Honest Description */}
+          <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-300">
+            {zone.description}
+          </p>
+
+          {/* Format / Platform Notes */}
+          {zone.special && zone.special.length > 0 && (
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-white/10 dark:bg-white/[0.03]">
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                Platform &amp; Format
+              </p>
+              <p className="mt-1 text-xs text-slate-700 dark:text-slate-300">
+                {zone.special
+                  .map((tag) => SPECIAL_TAG_LABELS[tag.toLowerCase()] || tag.toUpperCase())
+                  .join(' · ')}
+              </p>
+            </div>
+          )}
+
+          {/* Verified Global CDN Stats (only shown when loaded) */}
+          {(yearPlays > 0 || monthPlays > 0 || weekPlays > 0) && (
+            <div className="grid grid-cols-3 gap-2.5 text-center">
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-2.5 dark:border-white/10 dark:bg-white/[0.03]">
+                <div className="font-mono-tabular text-base font-bold text-slate-900 dark:text-white">
+                  {weekPlays.toLocaleString()}
                 </div>
-                <div>
-                  <div className="text-xs text-slate-500 dark:text-purple-300/75">Global Plays</div>
-                  <div className="font-mono-tabular font-semibold">
-                    {(stats.year?.[String(modal.zone.id)] ?? 0).toLocaleString('en-US')}
-                  </div>
-                </div>
-                <div className="col-span-2">
-                  <div className="text-xs text-slate-500 dark:text-purple-300/75">Author</div>
-                  <div className="font-semibold">{modal.zone.author || 'Community'}</div>
-                </div>
-                {modal.zone.special && modal.zone.special.length > 0 && (
-                  <div className="col-span-2">
-                    <div className="text-xs text-slate-500 dark:text-purple-300/75">Categories</div>
-                    <div className="font-medium">{modal.zone.special.join(' · ')}</div>
-                  </div>
-                )}
+                <div className="text-[11px] text-slate-500 dark:text-slate-400">7-Day Hits</div>
               </div>
-
-              {modal.zone.authorLink && (
-                <a
-                  href={modal.zone.authorLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-purple-600 dark:text-purple-300 hover:underline"
-                >
-                  <span>Visit Original Creator Page</span>
-                  <ExternalLink className="h-3.5 w-3.5" />
-                </a>
-              )}
-
-              <div className="rounded-xl border border-slate-200 dark:border-[#2e2050] bg-slate-50 dark:bg-[#1a0f2e] p-3.5 text-xs text-slate-600 dark:text-purple-200/80 space-y-1">
-                <div className="font-semibold text-slate-900 dark:text-slate-100">
-                  Hardware &amp; Control Tips
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-2.5 dark:border-white/10 dark:bg-white/[0.03]">
+                <div className="font-mono-tabular text-base font-bold text-slate-900 dark:text-white">
+                  {monthPlays.toLocaleString()}
                 </div>
-                <p>
-                  Click inside the game window once if keyboard keys do not respond immediately. On
-                  phones or touch Chromebooks, enable <strong>Touch Pad</strong> in the top bar for
-                  on-screen D-Pad &amp; Z/X/Space controls.
-                </p>
+                <div className="text-[11px] text-slate-500 dark:text-slate-400">30-Day Hits</div>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-2.5 dark:border-white/10 dark:bg-white/[0.03]">
+                <div className="font-mono-tabular text-base font-bold text-slate-900 dark:text-white">
+                  {yearPlays.toLocaleString()}
+                </div>
+                <div className="text-[11px] text-slate-500 dark:text-slate-400">Yearly Hits</div>
               </div>
             </div>
           )}
 
-          {modal.type === 'credits' && (
-            <div className="space-y-3 text-slate-600 dark:text-purple-100/85">
-              <p>
-                Built as a fast, school-network-resilient replication of the{' '}
-                <strong>DAKNUX</strong> catalog, inspired by <strong>gn-math</strong> and community
-                web ports.
-              </p>
-              <p>
-                All game covers, HTML wrappers, WebGL data chunks, and emulator cores are routed
-                through a local same-origin proxy so restricted networks never block CDN domains.
-              </p>
-              <p className="text-xs text-slate-500 dark:text-purple-300/75">
-                Disclaimer: DAKNUX is a non-commercial showcase of community HTML5 ports, ROM
-                homebrew, and open-source web games. All trademarks belong to their respective
-                creators.
-              </p>
-            </div>
-          )}
+          {/* Controls */}
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-3.5 dark:border-white/10 dark:bg-white/[0.03]">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              Controls &amp; Input
+            </h3>
+            <p className="mt-1.5 text-xs leading-relaxed text-slate-700 dark:text-slate-300">
+              {zone.controlsHint}
+            </p>
+          </div>
 
-          {modal.type === 'privacy' && (
-            <div className="space-y-3 text-slate-600 dark:text-purple-100/85">
-              <p>
-                This application runs without third-party analytics trackers (no Google Analytics or
-                ad scripts).
-              </p>
-              <p>
-                Favorites, recently played games, theme preference, and Tab Cloak settings are
-                stored exclusively in your browser&apos;s local storage and can be exported or
-                cleared at any time from Settings.
-              </p>
-            </div>
-          )}
+          {/* Hosting & Privacy Note */}
+          <div className="flex items-start gap-2.5 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3 text-xs text-slate-600 dark:text-slate-300">
+            <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
+            <span>
+              {hasProxy
+                ? 'Running with local DAKNUX streaming proxy enabled for asset compatibility.'
+                : 'Running in static browser mode directly via jsDelivr CDN. Favorites and history stay strictly in your device storage.'}
+            </span>
+          </div>
+        </div>
+
+        {/* Footer Actions */}
+        <div className="flex items-center justify-between gap-2 border-t border-slate-200/80 px-5 py-3.5 dark:border-white/10">
+          <button
+            type="button"
+            onClick={() => onToggleFavorite(zone.id)}
+            className={`inline-flex h-10 items-center gap-2 rounded-xl border px-3.5 text-xs font-semibold cursor-pointer ${
+              isFavorite
+                ? 'border-pink-500/40 bg-pink-500/15 text-pink-600 dark:text-pink-300'
+                : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-white/15 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10'
+            }`}
+          >
+            <Heart className={`h-4 w-4 ${isFavorite ? 'fill-current' : ''}`} />
+            <span>{isFavorite ? 'Favorited' : 'Add Favorite'}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              onClose();
+              onPlay(zone);
+            }}
+            className="inline-flex h-10 items-center gap-2 rounded-xl bg-violet-600 px-5 text-sm font-semibold text-white hover:bg-violet-500 cursor-pointer"
+          >
+            <Play className="h-4 w-4 fill-current" />
+            <span>Launch Game</span>
+          </button>
         </div>
       </div>
     </div>

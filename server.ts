@@ -779,6 +779,7 @@ window.google.ima = window.google.ima || {
       }
     }
     res.setHeader('Cache-Control', 'public, max-age=300');
+    res.setHeader('X-Daknux-Proxy', '1');
     res.json(cachedZones);
   });
 
@@ -1133,6 +1134,7 @@ window.google.ima = window.google.ima || {
 
   if (IS_PROD) {
     const distDir = path.resolve(__dirname, 'dist');
+    app.use('/larphaansingh', express.static(distDir, { maxAge: '1d' }));
     app.use(express.static(distDir, { maxAge: '1d' }));
     app.get('*', (_req: Request, res: Response) => {
       res.sendFile(path.join(distDir, 'index.html'));
