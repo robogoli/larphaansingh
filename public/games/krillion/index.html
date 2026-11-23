@@ -1,0 +1,2620 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Krillion · the daily dive</title>
+    <style>
+      @font-face {
+        font-family: 'VT323';
+        font-style: normal;
+        font-weight: 400;
+        font-display: swap;
+        src: url('./assets/vt323.woff2') format('woff2');
+      }
+
+      :root {
+        --color-abyss: #050a14;
+        --color-shallow: #101d33;
+        --color-line: #1b2c47;
+        --color-foam: #e8f1ff;
+        --color-drift: #7d93b8;
+        --color-lumen-pink: #ff5d8f;
+        --color-lumen-cyan: #4de3ff;
+        --color-tier-tooclever: #ff9f43;
+        --color-tier-krillion: #ffd166;
+        --color-tier-miss: #3d4f6e;
+        --tier-plankton: #8fa3c4;
+        --tier-tooclever: #ff9f43;
+        --tier-schooler: #4de3ff;
+        --tier-rare: #ff5252;
+        --tier-deepcut: #9d7bff;
+        --tier-krillion: #ffd166;
+        --tier-miss: #3d4f6e;
+        --tier-miss-lit: #5d739c;
+        --hairline: #7d93b838;
+        --font-display: 'VT323', ui-monospace, monospace;
+        --font-mono-ui: 'VT323', ui-monospace, monospace;
+      }
+
+      :root.colorblind {
+        --color-drift: #dbe5f5;
+        --tier-plankton: #d7e1f2;
+        --tier-tooclever: #ffb35c;
+        --tier-schooler: #7deaff;
+        --tier-rare: #ff7bac;
+        --tier-deepcut: #bfa7ff;
+        --tier-krillion: #ffe08a;
+        --tier-miss: #a3b6d6;
+        --tier-miss-lit: #b6c8e4;
+        --hairline: #c6d5ec80;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #050a14;
+        color: #e8f1ff;
+        font-family: var(--font-mono-ui);
+        -webkit-font-smoothing: antialiased;
+      }
+
+      /* Menu button + dialog matching Krillion SiteMenu */
+      .menu-trigger {
+        position: fixed;
+        top: max(8px, env(safe-area-inset-top));
+        left: max(5px, env(safe-area-inset-left));
+        z-index: 65;
+        width: 44px;
+        height: 44px;
+        color: var(--color-drift);
+        cursor: pointer;
+        background: none;
+        border: 0;
+        display: grid;
+        place-items: center;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .menu-trigger::before {
+        content: '';
+        position: absolute;
+        inset: 9px 5px;
+        background: #0b1526bf;
+        box-shadow: 0 0 0 2px #060d1ae6;
+      }
+      .menu-trigger[data-diving='true'] {
+        top: max(61px, calc(env(safe-area-inset-top) + 52px));
+      }
+      @media (min-width: 700px) {
+        .menu-trigger[data-diving='true'] {
+          top: max(75px, calc(env(safe-area-inset-top) + 66px));
+        }
+      }
+      .menu-trigger svg {
+        width: 18px;
+        height: 18px;
+        position: relative;
+      }
+      .menu-trigger:hover,
+      .menu-trigger:focus-visible {
+        color: var(--color-lumen-cyan);
+        outline: none;
+      }
+
+      dialog.site-menu {
+        width: min(430px, 100vw - 36px);
+        max-width: none;
+        height: fit-content;
+        max-height: calc(100dvh - 40px);
+        color: var(--color-foam);
+        background: var(--color-shallow);
+        box-shadow: 0 0 0 3px var(--color-abyss), 0 0 0 5px #1b3050, 10px 10px 0 #02050bd9, 0 0 38px #4de3ff24;
+        font-family: var(--font-mono-ui);
+        border: 0;
+        margin: auto;
+        padding: 0;
+        position: fixed;
+        inset: 0;
+        overflow-y: auto;
+      }
+      dialog.site-menu::backdrop {
+        background: #02050bd1;
+      }
+      .sm-panel {
+        background: repeating-linear-gradient(0deg, #00000029 0 1px, transparent 1px 3px), var(--color-shallow);
+        padding: 22px;
+      }
+      .sm-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 16px;
+        margin-bottom: 18px;
+      }
+      .sm-eyebrow {
+        color: var(--color-lumen-cyan);
+        letter-spacing: 0.22em;
+        text-shadow: 0 0 8px #4de3ff73;
+        font-size: 13px;
+        margin-bottom: 3px;
+      }
+      .sm-header h2 {
+        font-family: var(--font-display);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        text-shadow: -2px 1px #ff5d8fcc, 2px -1px #4de3ffb3, 0 0 14px #4de3ff40;
+        font-size: 36px;
+        font-weight: 400;
+        line-height: 1;
+      }
+      .sm-close {
+        width: 34px;
+        height: 30px;
+        color: var(--color-drift);
+        cursor: pointer;
+        background: #101d33;
+        border: 0;
+        display: grid;
+        place-items: center;
+        font-size: 25px;
+        line-height: 1;
+        box-shadow: 0 0 0 2px #050a14, 0 0 0 4px #1b3050, 0 3px 0 4px #0d1a2e;
+      }
+      .sm-close:hover {
+        color: var(--color-foam);
+        box-shadow: 0 0 0 2px #050a14, 0 0 0 4px var(--color-lumen-cyan), 0 3px 0 4px #123048;
+      }
+      .fathom {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 14px;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: var(--color-drift);
+        margin-bottom: 14px;
+      }
+      .fathom::after {
+        content: '';
+        flex: 1;
+        border-top: 1px dashed var(--hairline);
+      }
+      .sm-nav {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+        padding: 4px;
+      }
+      .sm-nav > button {
+        min-height: 76px;
+        color: var(--color-drift);
+        letter-spacing: 0.09em;
+        text-transform: uppercase;
+        text-align: center;
+        cursor: pointer;
+        background: #0d1830;
+        border: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 6px 10px;
+        font-family: var(--font-mono-ui);
+        font-size: 17px;
+        line-height: 1.1;
+        box-shadow: 0 0 0 2px #050a14, 0 0 0 4px #1b3050, 0 4px 0 4px #0b1424;
+        transition: transform 0.1s steps(2, end);
+      }
+      .sm-nav > button[aria-current='page'] {
+        color: var(--color-lumen-pink);
+        box-shadow: 0 0 0 2px #050a14, 0 0 0 4px var(--color-lumen-pink), 0 4px 0 4px #2a1024, 0 0 14px #ff5d8f2e;
+      }
+      .sm-nav > button:hover {
+        color: var(--color-foam);
+        box-shadow: 0 0 0 2px #050a14, 0 0 0 4px var(--color-lumen-cyan), 0 4px 0 4px #123048, 0 0 18px #4de3ff40;
+      }
+      .sm-nav > button:active {
+        transform: translateY(3px);
+      }
+      .sm-icon {
+        width: 20px;
+        height: 20px;
+      }
+      .sm-puffer {
+        width: 34px;
+        height: 34px;
+        image-rendering: pixelated;
+        object-fit: contain;
+      }
+      .sm-footer {
+        border-top: 1px dashed var(--hairline);
+        color: var(--color-drift);
+        letter-spacing: 0.05em;
+        margin-top: 22px;
+        padding-top: 12px;
+        font-size: 14px;
+      }
+
+      /* Stage Engine CSS matching Krillion ds-* */
+      .ds-root {
+        background: var(--color-abyss, #050a14);
+        font-family: var(--font-mono-ui);
+        color: #e8f1ff;
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+        --ds-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+        --ds-ease-snap: cubic-bezier(0.34, 1.56, 0.64, 1);
+        --ds-ease-io: cubic-bezier(0.65, 0, 0.35, 1);
+        z-index: 40;
+        position: fixed;
+        inset: 0;
+        overflow: hidden;
+      }
+      .ds-root img {
+        image-rendering: pixelated;
+      }
+      .ds-root button,
+      .ds-root input {
+        font-family: var(--font-mono-ui);
+        touch-action: manipulation;
+      }
+      .ds-stage {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+      }
+      .ds-stage.ds-shake {
+        animation: 0.5s linear ds-shake;
+      }
+      @keyframes ds-shake {
+        0%, to { transform: translate(0) rotate(0); }
+        12% { transform: translate(-10px, 5px) rotate(-0.6deg); }
+        26% { transform: translate(9px, -6px) rotate(0.5deg); }
+        42% { transform: translate(-7px, 4px) rotate(-0.35deg); }
+        58% { transform: translate(6px, -3px) rotate(0.25deg); }
+        76% { transform: translate(-3px, 2px) rotate(-0.1deg); }
+      }
+      .ds-stage canvas {
+        position: absolute;
+        inset: 0;
+      }
+      .ds-sea {
+        z-index: 0;
+      }
+      .ds-world {
+        z-index: 1;
+        will-change: transform;
+        width: 100%;
+        height: 14800px;
+        position: absolute;
+        top: 0;
+        left: 0;
+      }
+      .ds-fore {
+        z-index: 2;
+        pointer-events: none;
+      }
+      .ds-dim {
+        z-index: 6;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.9s var(--ds-ease-out);
+        position: absolute;
+        inset: 0;
+      }
+      .ds-dim.on {
+        opacity: 1;
+      }
+      .ds-vignette {
+        z-index: 5;
+        pointer-events: none;
+        opacity: 0.25;
+        background: radial-gradient(at 50% 45%, #0000 55%, #02040ad9 100%);
+        transition: opacity 2s;
+        position: absolute;
+        inset: 0;
+      }
+      .ds-edge {
+        z-index: 8;
+        pointer-events: none;
+        opacity: 0;
+        position: absolute;
+        inset: 0;
+        box-shadow: inset 0 0 90px 18px #ff5d8f99;
+      }
+      .ds-edge.danger {
+        animation: ds-edge-throb 0.55s var(--ds-ease-io) infinite;
+      }
+      @keyframes ds-edge-throb {
+        0%, to { opacity: 0.15; }
+        50% { opacity: 0.85; }
+      }
+      .ds-flash {
+        z-index: 9;
+        pointer-events: none;
+        opacity: 0;
+        position: absolute;
+        inset: 0;
+      }
+      .ds-crt {
+        pointer-events: none;
+        z-index: 12;
+        opacity: 0.45;
+        background: repeating-linear-gradient(0deg, #0000002e 0 1px, #0000 1px 3px);
+        position: absolute;
+        inset: 0;
+      }
+      .ds-crt.zap {
+        animation: 0.28s steps(3, end) ds-crt-zap;
+      }
+      @keyframes ds-crt-zap {
+        0% { opacity: 0.9; transform: translateY(0); }
+        33% { opacity: 0.2; transform: translateY(2px); }
+        66% { opacity: 0.7; transform: translateY(-1px); }
+        to { opacity: 0.45; transform: none; }
+      }
+      .ds-px {
+        clip-path: polygon(
+          0 10px, 5px 10px, 5px 5px, 10px 5px, 10px 0,
+          calc(100% - 10px) 0, calc(100% - 10px) 5px, calc(100% - 5px) 5px, calc(100% - 5px) 10px, 100% 10px,
+          100% calc(100% - 10px), calc(100% - 5px) calc(100% - 10px), calc(100% - 5px) calc(100% - 5px), calc(100% - 10px) calc(100% - 5px), calc(100% - 10px) 100%,
+          10px 100%, 10px calc(100% - 5px), 5px calc(100% - 5px), 5px calc(100% - 10px), 0 calc(100% - 10px)
+        );
+      }
+      .ds-surface {
+        text-align: center;
+        padding: 0 16px;
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: -336px;
+      }
+      .ds-root[data-phase='preview'] .ds-surface,
+      .ds-root[data-phase='answering'] .ds-surface,
+      .ds-root[data-phase='feedback'] .ds-surface {
+        visibility: hidden;
+      }
+      .ds-title {
+        letter-spacing: 0.04em;
+        color: #e8f1ff;
+        text-shadow: -4px 3px #ff5d8f, 4px -3px #4de3ffd9, 0 0 30px #4de3ff59;
+        font-size: clamp(66px, 17vw, 124px);
+        line-height: 0.9;
+        animation: 5s step-end infinite ds-title-flicker;
+      }
+      .ds-title span {
+        animation: 3.2s ease-in-out infinite ds-bob-l;
+        display: inline-block;
+      }
+      @keyframes ds-bob-l {
+        0%, to { transform: translateY(0); }
+        50% { transform: translateY(-9px); }
+      }
+      @keyframes ds-title-flicker {
+        0%, 93%, 95.5%, to { opacity: 1; }
+        93.6% { opacity: 0.7; }
+        94.4% { opacity: 0.94; }
+        95% { opacity: 0.62; }
+      }
+      .ds-tagline {
+        color: #4de3ff;
+        letter-spacing: 0.3em;
+        text-shadow: 0 2px #050a1466, 0 0 12px #4de3ff80;
+        margin-top: 6px;
+        font-size: clamp(20px, 5.4vw, 30px);
+      }
+      .ds-subline {
+        color: #7d93b8;
+        letter-spacing: 0.08em;
+        text-shadow: 0 1px #050a1459;
+        margin-top: 10px;
+        font-size: clamp(16px, 4vw, 22px);
+      }
+      .ds-surface-note {
+        letter-spacing: 0.14em;
+        color: var(--color-drift);
+        text-shadow: 0 1px #050a1459;
+        margin-top: 10px;
+        font-size: 18px;
+      }
+      .ds-root:not([data-phase='intro']) .ds-surface-note {
+        display: none;
+      }
+      .ds-amb {
+        color: #7d93b8;
+        letter-spacing: 0.06em;
+        white-space: nowrap;
+        text-shadow: 0 2px #00000080;
+        opacity: 0;
+        text-overflow: ellipsis;
+        max-width: 70vw;
+        font-size: 15px;
+        transition: opacity 0.6s ease-out;
+        position: absolute;
+        overflow: hidden;
+      }
+      .ds-amb.L { left: 10px; }
+      .ds-amb.R { text-align: right; right: 58px; }
+      .ds-amb .dash { color: #7d93b873; }
+      .ds-amb.major {
+        color: #4de3ff;
+        letter-spacing: 0.2em;
+        text-shadow: 0 0 12px #4de3ff73;
+        font-size: 17px;
+      }
+      .ds-world.ds-reveal .ds-amb { opacity: 0.85; }
+      .ds-world.ds-reveal .ds-amb.major { opacity: 1; }
+      .ds-tierline {
+        border-top: 2px dashed #7d93b85c;
+        height: 0;
+        position: absolute;
+        left: 8px;
+        right: 54px;
+      }
+      .ds-tierline .tag {
+        color: #7d93b8cc;
+        letter-spacing: 0.12em;
+        align-items: center;
+        gap: 6px;
+        font-size: 15px;
+        display: flex;
+        position: absolute;
+        top: -22px;
+        right: 0;
+      }
+      .ds-tierline .tag img { opacity: 0.55; width: 18px; height: 18px; }
+      .ds-tierline.passed {
+        border-top-color: var(--tc);
+        box-shadow: 0 0 16px var(--tc);
+        animation: 0.6s ease-out ds-line-flash;
+      }
+      .ds-tierline.passed .tag {
+        color: var(--tc);
+        text-shadow: 0 0 9px var(--tc);
+      }
+      .ds-tierline.passed .tag img { opacity: 1; }
+      @keyframes ds-line-flash {
+        0% { filter: brightness(3); }
+        to { filter: brightness(1); }
+      }
+      .ds-card {
+        background: #101d33ed;
+        padding: 16px 18px 14px;
+        animation: 0.6s cubic-bezier(0.2, 1.5, 0.4, 1) backwards ds-card-in;
+        position: absolute;
+        left: 12px;
+        right: 62px;
+        box-shadow: 0 0 0 3px #4de3ff40, 0 0 50px #0009, inset 0 0 34px #050a1499;
+      }
+      .ds-card::after {
+        content: '';
+        pointer-events: none;
+        opacity: 0.06;
+        background: repeating-linear-gradient(0deg, #0000 0 2px, #e8f1ff 2px 3px);
+        position: absolute;
+        inset: 0;
+      }
+      @keyframes ds-card-in {
+        0% { opacity: 0; transform: translateY(46px) scale(0.92); }
+      }
+      .ds-card .rnd {
+        color: #ff5d8f;
+        letter-spacing: 0.32em;
+        font-size: 16px;
+      }
+      .ds-card .prompt {
+        color: #e8f1ff;
+        text-shadow: 0 0 16px #e8f1ff40, 2px 0 #ff5d8f2e, -2px 0 #4de3ff2e;
+        margin: 6px 0 8px;
+        font-size: clamp(28px, 7.2vw, 40px);
+        line-height: 1.02;
+      }
+      .ds-card .hint {
+        color: #7d93b8;
+        letter-spacing: 0.14em;
+        font-size: 15px;
+      }
+      .ds-card.gone {
+        animation: 0.5s ease-in forwards ds-card-gone;
+      }
+      @keyframes ds-card-gone {
+        to { opacity: 0; filter: blur(2px); transform: translateY(-28px) scale(0.9); }
+      }
+      .ds-chip {
+        letter-spacing: 0.06em;
+        white-space: nowrap;
+        z-index: 6;
+        color: var(--cc, #4de3ff);
+        box-shadow: 0 0 0 3px var(--cc, #4de3ff), 0 0 26px var(--cc, #4de3ff);
+        text-shadow: 0 0 10px var(--cc, #4de3ff);
+        will-change: transform;
+        background: #101d33f2;
+        padding: 8px 16px 6px;
+        font-size: 26px;
+        position: absolute;
+        top: 0;
+        left: calc(50% - 24px);
+      }
+      .ds-chip::after {
+        content: '▼';
+        opacity: 0.8;
+        margin-left: 9px;
+        font-size: 18px;
+      }
+      .ds-chip.gold {
+        animation: ds-gold-pulse 1s var(--ds-ease-io) infinite;
+      }
+      @keyframes ds-gold-pulse {
+        0%, to { box-shadow: 0 0 0 3px #ffd166, 0 0 26px #ffd16680; }
+        50% { box-shadow: 0 0 0 3px #ffe9a8, 0 0 60px #ffd166e6; }
+      }
+      .ds-landed {
+        text-align: center;
+        z-index: 5;
+        margin-top: -104px;
+        animation: 0.7s cubic-bezier(0.2, 1.7, 0.4, 1) backwards ds-banner-in;
+        position: absolute;
+        left: 10px;
+        right: 52px;
+      }
+      @keyframes ds-banner-in {
+        0% { opacity: 0; transform: scale(0.5); }
+      }
+      .ds-landed img.icon {
+        width: 68px;
+        height: 68px;
+        filter: drop-shadow(0 0 20px var(--tc));
+        animation: 2.6s ease-in-out infinite ds-icon-bob;
+        display: inline-block;
+      }
+      @keyframes ds-icon-bob {
+        0%, to { transform: translateY(0); }
+        50% { transform: translateY(-8px); }
+      }
+      .ds-landed .tname {
+        letter-spacing: 0.12em;
+        color: var(--tc);
+        text-shadow: 0 0 22px var(--tc), 0 3px 0 #0009;
+        font-size: clamp(30px, 8.5vw, 46px);
+      }
+      .ds-landed .tans {
+        color: #e8f1ff;
+        letter-spacing: 0.08em;
+        margin-top: 2px;
+        font-size: 22px;
+      }
+      .ds-landed .tpts {
+        color: #e8f1ff;
+        margin-top: 4px;
+        font-size: 24px;
+      }
+      .ds-landed .tpts b {
+        color: var(--tc);
+        font-weight: 400;
+      }
+      .ds-landed .tsub {
+        color: #7d93b8;
+        letter-spacing: 0.14em;
+        margin-top: 4px;
+        font-size: 16px;
+      }
+      .ds-landed.miss img.icon { display: none; }
+      .ds-floor {
+        opacity: 0.95;
+        width: 100%;
+        top: 14020px;
+        position: absolute;
+        left: 0;
+        mask-image: linear-gradient(#0000, #000 32%);
+      }
+      .ds-hud {
+        z-index: 10;
+        pointer-events: none;
+        opacity: 0;
+        max-width: 720px;
+        transition: transform 0.6s var(--ds-ease-snap), opacity 0.5s;
+        justify-content: space-between;
+        align-items: stretch;
+        gap: 8px;
+        margin: 0 auto;
+        padding: 8px 10px 0;
+        display: flex;
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        transform: translateY(-80px);
+      }
+      .ds-root[data-phase='answering'] .ds-hud,
+      .ds-root[data-phase='preview'] .ds-hud,
+      .ds-root[data-phase='feedback'] .ds-hud {
+        opacity: 1;
+        transform: none;
+      }
+      .ds-pod {
+        background: linear-gradient(#101d33eb, #0b1526eb);
+        min-width: 86px;
+        padding: 5px 10px 6px;
+        box-shadow: 0 0 0 2px #060d1a, 0 0 0 4px #1b3050, inset 0 2px #e8f1ff0f;
+      }
+      .ds-pod .label {
+        letter-spacing: 0.3em;
+        color: #7d93b8;
+        font-size: 12px;
+      }
+      .ds-depth-num {
+        color: #4de3ff;
+        text-shadow: 0 0 12px #4de3ff8c;
+        font-variant-numeric: tabular-nums;
+        font-size: 28px;
+        line-height: 1;
+      }
+      .ds-hud-mid {
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 4px;
+        display: flex;
+      }
+      .ds-dots {
+        gap: 6px;
+        display: flex;
+      }
+      .ds-dots i {
+        width: 10px;
+        height: 10px;
+        background: #12233d;
+        box-shadow: 0 0 0 2px #060d1a;
+      }
+      .ds-dots i.done {
+        background: #ffd166;
+        box-shadow: 0 0 0 2px #060d1a, 0 0 8px #ffd166b3;
+      }
+      .ds-dots i.cur {
+        animation: ds-dot-pulse 1.4s var(--ds-ease-io) infinite;
+        background: #ff5d8f;
+        box-shadow: 0 0 0 2px #060d1a, 0 0 10px #ff5d8fd9;
+      }
+      @keyframes ds-dot-pulse {
+        0%, to { transform: scale(1.05); }
+        50% { transform: scale(1.35); }
+      }
+      .ds-prompt-count {
+        color: #7d93b8;
+        letter-spacing: 0.22em;
+        font-size: 13px;
+      }
+      .ds-score-pod { text-align: right; }
+      .ds-score-num {
+        color: #ff5d8f;
+        text-shadow: 0 0 12px #ff5d8f80;
+        font-variant-numeric: tabular-nums;
+        font-size: 28px;
+        line-height: 1;
+      }
+      .ds-score-num.slam {
+        animation: ds-score-slam 0.5s var(--ds-ease-snap) 1;
+      }
+      @keyframes ds-score-slam {
+        0% { transform: scale(1); }
+        35% { color: #ffd166; text-shadow: 0 0 26px #ffd166e6; transform: scale(1.4) rotate(-2deg); }
+        to { transform: scale(1); }
+      }
+      .ds-dock {
+        z-index: 10;
+        padding: 10px 12px calc(12px + env(safe-area-inset-bottom));
+        background: linear-gradient(180deg, #0b152600, #050a14eb 26%);
+        transition: transform 0.55s var(--ds-ease-snap);
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        transform: translateY(120%);
+      }
+      .ds-dock-inner {
+        align-items: center;
+        gap: 10px;
+        max-width: 600px;
+        margin: 0 auto;
+        display: flex;
+      }
+      .ds-root[data-phase='answering'] .ds-dock {
+        transform: none;
+      }
+      .ds-sonar-wrap {
+        flex: none;
+        width: 58px;
+        height: 58px;
+        position: relative;
+      }
+      .ds-sonar-scope {
+        background: radial-gradient(circle, #0b1526f2 40%, #101d33e6 100%);
+        border-radius: 50%;
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+        box-shadow: 0 0 0 2px #060d1a, 0 0 0 4px #1b3050, 0 0 18px #4de3ff33, inset 0 0 14px #4de3ff24;
+      }
+      .ds-sonar-scope::before {
+        content: '';
+        border: 1px solid #4de3ff38;
+        border-radius: 50%;
+        position: absolute;
+        inset: 8px;
+      }
+      .ds-sweep {
+        transform-origin: 0;
+        background: linear-gradient(90deg, #4de3ffe6, #0000);
+        width: 50%;
+        height: 2px;
+        animation: 2.4s linear infinite ds-sweep-spin;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        box-shadow: 0 0 8px #4de3ffcc;
+      }
+      .ds-dock.hot .ds-sweep {
+        animation-duration: 0.7s;
+      }
+      @keyframes ds-sweep-spin {
+        to { transform: rotate(360deg); }
+      }
+      .ds-time-digits {
+        color: #4de3ff;
+        text-shadow: 0 0 12px #4de3ffb3;
+        font-variant-numeric: tabular-nums;
+        justify-content: center;
+        align-items: center;
+        font-size: 28px;
+        display: flex;
+        position: absolute;
+        inset: 0;
+      }
+      .ds-time-digits.hot {
+        color: #ff5d8f;
+        text-shadow: 0 0 16px #ff5d8fe6;
+      }
+      .ds-input-col {
+        flex: 1;
+        min-width: 0;
+        position: relative;
+      }
+      .ds-input {
+        letter-spacing: 0.04em;
+        color: #e8f1ff;
+        caret-color: #ff5d8f;
+        background: #0b1526e6;
+        border: 2px solid #1b3050;
+        outline: none;
+        width: 100%;
+        padding: 9px 10px 7px;
+        font-size: 26px;
+        transition: border-color 0.25s;
+      }
+      .ds-input:focus {
+        border-color: #4de3ffa6;
+      }
+      .ds-dock.hot .ds-input {
+        border-color: #ff5d8f;
+      }
+      .ds-input::placeholder {
+        color: #7d93b8;
+        opacity: 0.55;
+      }
+      .ds-fuse {
+        background: #0a1322;
+        width: 100%;
+        height: 4px;
+        position: absolute;
+        bottom: -8px;
+        left: 0;
+        overflow: hidden;
+        box-shadow: 0 0 0 2px #060d1a;
+      }
+      .ds-fuse-fill {
+        transform-origin: 0;
+        background: #4de3ff;
+        width: 100%;
+        height: 100%;
+      }
+      .ds-dock.hot .ds-fuse-fill {
+        background: #ff5d8f;
+      }
+      .ds-dive-btn {
+        letter-spacing: 0.12em;
+        color: #050a14;
+        cursor: pointer;
+        background: #ff5d8f;
+        border: none;
+        flex: none;
+        padding: 11px 16px 9px;
+        font-size: 23px;
+        box-shadow: 0 0 0 2px #050a14, 0 3px 0 2px #7d1d3c, 0 0 16px #ff5d8f73;
+      }
+      .ds-dive-btn:active {
+        transform: translateY(2px);
+        box-shadow: 0 0 0 2px #050a14, 0 1px 0 2px #7d1d3c;
+      }
+      .ds-reject {
+        left: 12px;
+        right: 12px;
+        bottom: calc(84px + env(safe-area-inset-bottom));
+        z-index: 10;
+        text-align: center;
+        letter-spacing: 0.08em;
+        color: var(--color-tier-tooclever, #ff9f43);
+        text-shadow: 0 1px #0009;
+        pointer-events: none;
+        font-size: 18px;
+        position: absolute;
+      }
+      .ds-reject-shake {
+        animation: 0.4s linear ds-reject-jolt;
+      }
+      @keyframes ds-reject-jolt {
+        0%, to { transform: translate(0); }
+        20% { transform: translate(-8px); }
+        45% { transform: translate(7px); }
+        70% { transform: translate(-4px); }
+        88% { transform: translate(2px); }
+      }
+      .ds-preview-pill {
+        left: 50%;
+        bottom: calc(26px + env(safe-area-inset-bottom));
+        z-index: 10;
+        letter-spacing: 0.14em;
+        color: #7d93b8;
+        white-space: nowrap;
+        background: #0b1526eb;
+        padding: 9px 18px 7px;
+        font-size: 18px;
+        position: absolute;
+        transform: translate(-50%);
+        box-shadow: 0 0 0 2px #060d1a, 0 0 0 4px #1b3050;
+      }
+      .ds-preview-pill b {
+        color: #4de3ff;
+        font-variant-numeric: tabular-nums;
+        font-weight: 400;
+      }
+      .ds-next-wrap {
+        z-index: 10;
+        padding: 10px 12px calc(16px + env(safe-area-inset-bottom));
+        background: linear-gradient(180deg, #0b152600, #050a14eb 30%);
+        animation: ds-rise-in 0.5s var(--ds-ease-snap) backwards;
+        justify-content: center;
+        display: flex;
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+      }
+      @keyframes ds-rise-in {
+        0% { opacity: 0; transform: translateY(30px); }
+      }
+      .ds-next-btn {
+        letter-spacing: 0.14em;
+        color: #e8f1ff;
+        cursor: pointer;
+        background: #101d33;
+        border: none;
+        padding: 12px 30px 10px;
+        font-size: 24px;
+        box-shadow: 0 0 0 3px #050a14, 0 0 0 6px #4de3ff, 0 5px 0 6px #123048, 0 0 22px #4de3ff4d;
+      }
+      .ds-next-btn:hover {
+        box-shadow: 0 0 0 3px #050a14, 0 0 0 6px #ff5d8f, 0 5px 0 6px #123048, 0 0 30px #ff5d8f80;
+      }
+      .ds-intro {
+        z-index: 12;
+        padding: 14px 16px calc(16px + env(safe-area-inset-bottom));
+        background: linear-gradient(180deg, #0b152600, #050a14e6 24%);
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+      }
+      .ds-intro-inner {
+        flex-direction: column;
+        gap: 12px;
+        max-width: 600px;
+        margin: 0 auto;
+        display: flex;
+      }
+      .ds-begin-btn {
+        letter-spacing: 0.14em;
+        color: #e8f1ff;
+        cursor: pointer;
+        animation: ds-btn-bob 1.9s var(--ds-ease-io) infinite;
+        background: #101d33;
+        border: none;
+        padding: 13px 34px 11px;
+        font-size: clamp(24px, 6vw, 30px);
+        box-shadow: 0 0 0 3px #050a14, 0 0 0 6px #4de3ff, 0 6px 0 6px #123048, 0 0 26px #4de3ff4d;
+        width: 100%;
+      }
+      @keyframes ds-btn-bob {
+        0%, to { transform: translateY(0); }
+        50% { transform: translateY(5px); }
+      }
+      .ds-begin-btn:hover {
+        box-shadow: 0 0 0 3px #050a14, 0 0 0 6px #ff5d8f, 0 6px 0 6px #123048, 0 0 34px #ff5d8f8c;
+      }
+      .ds-intro-meta {
+        letter-spacing: 0.14em;
+        color: #7d93b8e6;
+        text-transform: uppercase;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        font-size: 16px;
+        display: flex;
+        flex-wrap: wrap;
+      }
+      .ds-intro-meta button {
+        color: #7d93b8;
+        background: #0b1526d9;
+        border: 1px solid #1b3050;
+        padding: 4px 10px 2px;
+        font-size: 15px;
+        cursor: pointer;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+      }
+      .ds-intro-meta button:hover {
+        color: #e8f1ff;
+        border-color: #4de3ffa6;
+      }
+      .ds-howto summary {
+        cursor: pointer;
+        letter-spacing: 0.18em;
+        color: #7d93b8;
+        text-transform: uppercase;
+        font-size: 16px;
+        list-style: none;
+      }
+      .ds-howto summary::before { content: '▸ '; }
+      .ds-howto[open] summary::before { content: '▾ '; }
+      .ds-howto ul {
+        letter-spacing: 0.06em;
+        color: #7d93b8;
+        text-transform: uppercase;
+        flex-direction: column;
+        gap: 4px;
+        margin-top: 8px;
+        font-size: 16px;
+        list-style: none;
+        display: flex;
+      }
+      .ds-mute {
+        z-index: 12;
+        color: #7d93b8;
+        cursor: pointer;
+        opacity: 0.85;
+        background: #0b1526bf;
+        border: none;
+        justify-content: center;
+        align-items: center;
+        width: 34px;
+        height: 26px;
+        padding: 0;
+        display: flex;
+        position: absolute;
+        top: 70px;
+        right: 10px;
+        box-shadow: 0 0 0 2px #060d1ae6;
+      }
+      @media (min-width: 700px) {
+        .ds-mute { top: 84px; }
+      }
+      .ds-mute svg { width: 20px; height: 16px; display: block; }
+      .ds-mute:hover { color: #4de3ff; }
+      .ds-mute.off { color: #7d93b873; }
+
+      /* Mascot */
+      .ds-mascot {
+        z-index: 11;
+        cursor: pointer;
+        will-change: transform;
+        width: 64px;
+        height: 64px;
+        position: absolute;
+      }
+      .ds-mascot.perched {
+        width: 68px;
+        height: 68px;
+      }
+      .ds-mascot img {
+        width: 100%;
+        height: 100%;
+        filter: drop-shadow(0 0 12px var(--dsm-shadow, #ff5d8f73));
+        animation: ds-swim 2.6s var(--ds-ease-io) infinite;
+        display: block;
+      }
+      .ds-mascot.gold img {
+        filter: drop-shadow(0 0 18px #ffd166b8);
+      }
+      @keyframes ds-swim {
+        0%, to { transform: translateY(0) rotate(-4deg) scaleX(1); }
+        25% { transform: translateY(-7px) rotate(2deg) scaleX(0.96); }
+        50% { transform: translateY(-2px) rotate(5deg) scaleX(1); }
+        75% { transform: translateY(-9px) rotate(-2deg) scaleX(0.97); }
+      }
+      .ds-mascot img.roll { animation: 0.9s cubic-bezier(0.3, 0.1, 0.3, 1) ds-roll; }
+      @keyframes ds-roll { to { transform: rotate(720deg); } }
+      .ds-mascot img.celebrate { animation: ds-loop 1.2s var(--ds-ease-io) 1; }
+      @keyframes ds-loop {
+        0% { transform: rotate(0) translateY(0) scale(1); }
+        30% { transform: rotate(-140deg) translateY(-36px) scale(1.15); }
+        60% { transform: rotate(-280deg) translateY(-16px) scale(1.2); }
+        to { transform: rotate(-360deg) translateY(0) scale(1); }
+      }
+      .ds-blub {
+        z-index: 2;
+        color: var(--dsm-color, #ff5d8f);
+        opacity: 0;
+        text-shadow: 0 0 9px var(--dsm-glow, #ff5d8fb3);
+        pointer-events: none;
+        font-size: 20px;
+        position: absolute;
+        top: -22px;
+        left: 44px;
+      }
+      .ds-blub.show { animation: 1s ease-out ds-blub-up; }
+      @keyframes ds-blub-up {
+        0% { opacity: 0; transform: translateY(6px); }
+        20% { opacity: 1; }
+        to { opacity: 0; transform: translateY(-16px); }
+      }
+
+      /* Done Screen */
+      .ds-done {
+        z-index: 10;
+        padding: 20px 20px calc(30px + env(safe-area-inset-bottom));
+        user-select: text;
+        background: linear-gradient(#050a14db, #050a14b8 30%, #050a14c7);
+        position: absolute;
+        inset: 0;
+        overflow-y: auto;
+      }
+      .ds-done-inner {
+        max-width: 28rem;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        padding-bottom: 40px;
+      }
+      .ds-done-krill {
+        letter-spacing: 0.06em;
+        color: #e8f1ff;
+        text-shadow: -2px 2px #ff5d8f, 2px -2px #4de3ffd9, 0 0 14px #4de3ff4d;
+        font-size: 30px;
+        line-height: 1;
+      }
+      .btn-descend {
+        letter-spacing: 0.14em;
+        color: #050a14;
+        background: #ff5d8f;
+        padding: 11px 18px 9px;
+        font-size: 20px;
+        border: 0;
+        cursor: pointer;
+        text-transform: uppercase;
+        box-shadow: 0 0 0 2px #050a14, 0 3px 0 2px #7d1d3c, 0 0 16px #ff5d8f73;
+      }
+      .btn-descend:active { transform: translateY(2px); }
+      .btn-quiet {
+        letter-spacing: 0.14em;
+        color: #e8f1ff;
+        background: #101d33;
+        padding: 11px 16px 9px;
+        font-size: 18px;
+        border: 0;
+        cursor: pointer;
+        text-transform: uppercase;
+        box-shadow: 0 0 0 2px #050a14, 0 0 0 4px #1b3050;
+      }
+      .btn-quiet:hover {
+        color: #4de3ff;
+        box-shadow: 0 0 0 2px #050a14, 0 0 0 4px #4de3ffa6;
+      }
+      .hub-panel {
+        border: 1px solid var(--hairline);
+        background: #0a1523e6;
+        padding: 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .round-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 10px 0;
+        border-bottom: 1px dashed var(--hairline);
+      }
+      .round-row:last-child { border-bottom: 0; }
+
+      /* Hub Sub-Views (Packs, Archive, My Krillion, Party, FAQ) */
+      .hub-screen {
+        position: fixed;
+        inset: 0;
+        z-index: 45;
+        background: linear-gradient(180deg, #0b1526 0%, #050a14 55%, #03070f 100%);
+        overflow-y: auto;
+        padding: 58px 20px 44px;
+      }
+      .hub-inner {
+        width: min(100%, 740px);
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+      }
+      .pack-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+        gap: 16px;
+      }
+      .pack-card {
+        border: 1px solid var(--hairline);
+        background: #0a1523;
+        overflow: hidden;
+        cursor: pointer;
+        text-align: left;
+        color: var(--color-foam);
+        display: flex;
+        flex-direction: column;
+        transition: border-color 0.15s, transform 0.12s;
+      }
+      .pack-card:hover {
+        border-color: var(--color-lumen-cyan);
+        transform: translateY(-2px);
+      }
+      .pack-card img {
+        width: 100%;
+        height: 120px;
+        object-fit: cover;
+        image-rendering: pixelated;
+      }
+      .pack-card-body {
+        padding: 14px;
+      }
+      .buddy-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: 12px;
+      }
+      .buddy-card {
+        border: 1px solid var(--hairline);
+        background: #0a1523;
+        padding: 14px 8px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 8px;
+        cursor: pointer;
+      }
+      .buddy-card[data-selected='true'] {
+        border-color: var(--color-lumen-cyan);
+        box-shadow: 0 0 14px #4de3ff33;
+      }
+      .buddy-card[data-earned='false'] img {
+        filter: grayscale(1);
+        opacity: 0.35;
+      }
+      .ds-root[data-world='cinema'] .ds-tagline { color: #ffd166; text-shadow: 0 2px #14081080, 0 0 14px #ffd1668c; }
+      .ds-root[data-world='cinema'] .ds-card { background: #1d0d22ed; box-shadow: 0 0 0 3px #ffd1664d, 0 0 50px #0009; }
+      .ds-root[data-world='cinema'] .ds-card .rnd { color: #ffd166; }
+      .ds-root[data-world='cinema'] .ds-dive-btn { background: #ff9f43; box-shadow: 0 0 0 2px #14080f, 0 3px 0 2px #7d4a1d; }
+      .ds-root[data-world='cinema'] .ds-begin-btn { background: #1d0d22; box-shadow: 0 0 0 3px #14080f, 0 0 0 6px #ffd166, 0 5px 0 6px #57284a; }
+
+      .hidden { display: none !important; }
+    </style>
+  </head>
+  <body>
+    <button
+      id="menu-trigger"
+      type="button"
+      class="menu-trigger"
+      data-diving="false"
+      aria-label="Open menu"
+    >
+      <svg viewBox="0 0 20 20" fill="currentColor" shape-rendering="crispEdges" aria-hidden="true">
+        <path d="M2 3h16v3H2zm0 6h16v3H2zm0 6h16v3H2z"></path>
+      </svg>
+    </button>
+
+    <dialog id="site-menu" class="site-menu" aria-labelledby="site-menu-title">
+      <div class="sm-panel">
+        <header class="sm-header">
+          <div>
+            <p class="sm-eyebrow">KRILLION</p>
+            <h2 id="site-menu-title">Menu</h2>
+          </div>
+          <button id="menu-close" class="sm-close" type="button" aria-label="Close menu">×</button>
+        </header>
+        <p class="fathom"><span>Dive in</span></p>
+        <nav class="sm-nav" aria-label="Main navigation">
+          <button type="button" data-nav="daily" aria-current="page">
+            <svg class="sm-icon" viewBox="0 0 20 20" fill="currentColor" shape-rendering="crispEdges"><path d="M9 2h2v10h5v2h-2v2h-2v2H8v-2H6v-2H4v-2h5z"></path></svg>
+            <span>Daily dive</span>
+          </button>
+          <button type="button" data-nav="unlimited">
+            <span style="font-size:28px;line-height:20px">∞</span>
+            <span>Unlimited</span>
+          </button>
+          <button type="button" data-nav="party">
+            <img class="sm-puffer" src="./assets/puffer-0.png" alt="" />
+            <span>Puffer Party</span>
+          </button>
+          <button type="button" data-nav="archive">
+            <span style="font-size:26px;line-height:20px">⟲</span>
+            <span>Archive</span>
+          </button>
+          <button type="button" data-nav="packs">
+            <svg class="sm-icon" viewBox="0 0 20 20" fill="currentColor" shape-rendering="crispEdges"><path d="M2 2h6v6H2z M12 2h6v6h-6z M2 12h6v6H2z M12 12h6v6h-6z"></path></svg>
+            <span>Themed packs</span>
+          </button>
+          <button type="button" data-nav="account">
+            <svg class="sm-icon" viewBox="0 0 20 20" fill="currentColor" shape-rendering="crispEdges"><path d="M7 2h6v2h2v6h-2v2H7v-2H5V4h2z M5 14h10v2h2v3H3v-3h2z"></path></svg>
+            <span>My Krillion</span>
+          </button>
+          <button type="button" data-nav="settings">
+            <svg class="sm-icon" viewBox="0 0 20 20" fill="currentColor" shape-rendering="crispEdges"><path d="M6 4H14V6H16V14H14V16H6V14H4V6H6Z M8 1H12V4H8Z M8 16H12V19H8Z M1 8H4V12H1Z M16 8H19V12H16Z M8 8H12V12H8Z"></path></svg>
+            <span>Settings</span>
+          </button>
+          <button type="button" data-nav="faq">
+            <svg class="sm-icon" viewBox="0 0 20 20" fill="currentColor" shape-rendering="crispEdges"><path d="M5 2h10v2h2v6h-2v2h-4v2H8v-4h5V6H7v2H3V4h2z M8 16h3v3H8z"></path></svg>
+            <span>FAQ</span>
+          </button>
+        </nav>
+        <footer class="sm-footer">one in a krillion.</footer>
+      </div>
+    </dialog>
+
+    <!-- Main Descent Stage -->
+    <div id="ds-root" class="ds-root" data-phase="intro" data-world="ocean">
+      <div id="ds-stage" class="ds-stage">
+        <canvas id="ds-sea" class="ds-sea"></canvas>
+        <div id="ds-world" class="ds-world ds-reveal">
+          <div id="ds-surface" class="ds-surface">
+            <div id="ds-title" class="ds-title"></div>
+            <div id="ds-tagline" class="ds-tagline">THE DAILY DIVE</div>
+            <div id="ds-subline" class="ds-subline">7 prompts · 25 seconds each · rarer answers sink deeper</div>
+          </div>
+          <img class="ds-floor" src="./assets/water-bg.webp" alt="" />
+        </div>
+        <canvas id="ds-fore" class="ds-fore"></canvas>
+        <div class="ds-dim"></div>
+        <div id="ds-vignette" class="ds-vignette"></div>
+        <div id="ds-edge" class="ds-edge"></div>
+        <div id="ds-flash" class="ds-flash"></div>
+
+        <div class="ds-hud">
+          <div class="ds-pod ds-px">
+            <div class="label">DEPTH</div>
+            <div id="hud-depth" class="ds-depth-num">0m</div>
+          </div>
+          <div class="ds-hud-mid">
+            <div id="hud-dots" class="ds-dots"></div>
+            <div id="hud-count" class="ds-prompt-count">SURFACE</div>
+          </div>
+          <div class="ds-pod ds-px ds-score-pod">
+            <div class="label">SCORE</div>
+            <div id="hud-score" class="ds-score-num">0</div>
+          </div>
+        </div>
+
+        <div id="ds-mascot" class="ds-mascot" title="a friend">
+          <span class="ds-mascot-sprite">
+            <img id="ds-mascot-img" src="./assets/tiers/krillion.png" alt="krill" />
+          </span>
+          <span id="ds-blub" class="ds-blub">blub!</span>
+        </div>
+
+        <div id="ds-crt" class="ds-crt"></div>
+        <button id="ds-mute" class="ds-mute" type="button" aria-label="toggle sound"></button>
+      </div>
+
+      <!-- Intro Overlay -->
+      <div id="intro-overlay" class="ds-intro">
+        <div class="ds-intro-inner">
+          <details class="ds-howto">
+            <summary>how to play</summary>
+            <ul>
+              <li>7 prompts a day. same for everyone.</li>
+              <li>25 seconds to name one thing.</li>
+              <li>rare answers score big. obvious ones float.</li>
+              <li>the pick that feels clever? the school thought of it too.</li>
+              <li>every point sinks you 10 metres. 700 is the trench.</li>
+              <li>one dive per day. no second chances.</li>
+            </ul>
+          </details>
+          <button id="begin-btn" class="ds-begin-btn" type="button">▼ BEGIN DESCENT ▼</button>
+          <div class="ds-intro-meta">
+            <span id="intro-meta-label">dive #130 · streak 0</span>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button type="button" data-quick="archive">ARCHIVE ⟲</button>
+              <button type="button" data-quick="packs">THEMED PACKS</button>
+              <button type="button" data-quick="unlimited">UNLIMITED ∞</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Preview Overlay -->
+      <div id="preview-pill" class="ds-preview-pill hidden">GET READY · <b id="preview-sec">2</b></div>
+
+      <!-- Answer Dock -->
+      <div id="ds-reject" class="ds-reject hidden"></div>
+      <form id="ds-dock" class="ds-dock" autocomplete="off">
+        <div class="ds-dock-inner">
+          <div class="ds-sonar-wrap">
+            <div class="ds-sonar-scope">
+              <div class="ds-sweep"></div>
+              <div id="time-digits" class="ds-time-digits">25</div>
+            </div>
+          </div>
+          <div class="ds-input-col">
+            <input
+              id="ds-input"
+              class="ds-input"
+              type="text"
+              placeholder="name one..."
+              maxlength="44"
+              enterkeyhint="send"
+            />
+            <div class="ds-fuse">
+              <div id="ds-fuse-fill" class="ds-fuse-fill"></div>
+            </div>
+          </div>
+          <button id="dive-btn" class="ds-dive-btn" type="submit">DIVE</button>
+        </div>
+      </form>
+
+      <!-- Next Prompt Wrap -->
+      <div id="next-wrap" class="ds-next-wrap hidden">
+        <button id="next-btn" class="ds-next-btn" type="button">NEXT PROMPT →</button>
+      </div>
+
+      <!-- Done Overlay -->
+      <div id="done-overlay" class="ds-done hidden">
+        <div class="ds-done-inner">
+          <div>
+            <div style="display:flex;align-items:baseline;justify-content:space-between">
+              <span class="ds-done-krill">KRILLION</span>
+              <span id="done-dive-label" style="font-size:16px;letter-spacing:0.14em;color:var(--color-drift);text-transform:uppercase">Dive complete</span>
+            </div>
+            <div style="display:flex;align-items:baseline;gap:10px;margin-top:10px">
+              <span id="done-score-big" style="font-size:78px;line-height:1;color:var(--color-foam)">0</span>
+              <span id="done-depth-sub" style="font-size:20px;color:var(--color-lumen-cyan)">-0m</span>
+            </div>
+            <p id="done-verdict" style="font-size:20px;color:var(--color-drift);margin-top:4px"></p>
+          </div>
+
+          <div id="done-emoji-bar" style="font-size:26px;letter-spacing:4px"></div>
+
+          <div class="hub-panel" id="done-breakdown"></div>
+
+          <div style="display:flex;flex-wrap:wrap;gap:12px">
+            <button id="copy-results-btn" class="btn-descend" type="button">Copy results</button>
+            <button id="play-unlimited-btn" class="btn-quiet" type="button">Unlimited ∞</button>
+            <button id="back-surface-btn" class="btn-quiet" type="button">Surface</button>
+          </div>
+          <p id="copy-toast" style="font-size:17px;color:var(--color-lumen-cyan);min-height:22px"></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Secondary Hub Screens (Archive / Packs / Party / Account / Settings / FAQ) -->
+    <div id="hub-screen" class="hub-screen hidden">
+      <div id="hub-content" class="hub-inner"></div>
+    </div>
+
+    <script>
+      // === Exact Krillion Tiers, Score Bands & Ambient Depth Markers ===
+      const TIERS = {
+        plankton: { id: 'plankton', name: 'Plankton', score: 10, emoji: '🫧', blurb: 'The answer everyone blurts out.', depth: 0.08, color: 'var(--tier-plankton)', sprite: './assets/tiers/schooler.png' },
+        tooclever: { id: 'tooclever', name: 'Too Clever', score: 15, emoji: '🤡', blurb: 'A famously “obscure” pick. Everyone reaches for it.', depth: 0.18, color: 'var(--tier-tooclever)', sprite: './assets/tiers/schooler.png' },
+        schooler: { id: 'schooler', name: 'Schooler', score: 30, emoji: '🐟', blurb: 'Solid — swims with the school.', depth: 0.36, color: 'var(--tier-schooler)', sprite: './assets/tiers/schooler.png' },
+        rare: { id: 'rare', name: 'Rare', score: 60, emoji: '🦑', blurb: 'Genuinely uncommon. Nice pull.', depth: 0.60, color: 'var(--tier-rare)', sprite: './assets/tiers/rare.png' },
+        deepcut: { id: 'deepcut', name: 'Deep Cut', score: 85, emoji: '🏮', blurb: 'True obscurity. Few go this deep.', depth: 0.82, color: 'var(--tier-deepcut)', sprite: './assets/tiers/deepcut.png' },
+        krillion: { id: 'krillion', name: 'One in a Krillion', score: 100, emoji: '🌟', blurb: 'The designated gem. Trench floor.', depth: 0.97, color: 'var(--tier-krillion)', sprite: './assets/tiers/krillion-gold.png' },
+      };
+
+      const SCORE_BANDS = [
+        { min: 0, tier: 'plankton', verdict: 'Plankton. Plenty of ocean left down there.' },
+        { min: 151, tier: 'schooler', verdict: 'Schooler. Swimming with the school.' },
+        { min: 251, tier: 'rare', verdict: 'Rare. Below the thermocline. Nice.' },
+        { min: 351, tier: 'deepcut', verdict: 'Deep cut. Seriously deep dive.' },
+        { min: 450, tier: 'krillion', verdict: 'One in a krillion. Trench dweller. Absurd.' },
+      ];
+
+      const BUDDIES = [
+        { id: 'krill', name: 'The Krill', sprite: './assets/tiers/krillion.png', goldSprite: './assets/tiers/krillion-gold.png', color: '#ff5d8f', blub: 'blub!', poke: 'roll', unlockStreak: 0 },
+        { id: 'schooler', name: 'Schooler', sprite: './assets/tiers/schooler.png', goldSprite: './assets/tiers/schooler-gold.png', color: '#4de3ff', blub: 'glub!', poke: 'roll', unlockStreak: 2 },
+        { id: 'rare', name: 'Rare Squid', sprite: './assets/tiers/rare.png', goldSprite: './assets/tiers/rare-gold.png', color: '#ff5252', blub: 'blorp!', poke: 'celebrate', unlockStreak: 5 },
+        { id: 'deepcut', name: 'Deep Cut Angler', sprite: './assets/tiers/deepcut.png', goldSprite: './assets/tiers/deepcut-gold.png', color: '#9d7bff', blub: 'chomp!', poke: 'roll', unlockStreak: 10 },
+        { id: 'evil-krill', name: 'Evil Krill', sprite: './assets/tiers/evil-krill-white-v2.png', goldSprite: './assets/tiers/evil-krill-white-v2.png', color: '#ff303b', blub: 'mwahaha!', poke: 'roll', unlockStreak: 15 },
+        { id: 'hackmanite', name: 'Hackmanite', sprite: './assets/tiers/hackmanite-v2.png', goldSprite: './assets/tiers/hackmanite-v2.png', color: '#dfefee', blub: 'glimmer!', poke: 'celebrate', unlockStreak: 25 },
+        { id: 'fossil-krill', name: 'Fossil Krill', sprite: './assets/tiers/fossil-krill.png', goldSprite: './assets/tiers/fossil-krill.png', color: '#e8cfa4', blub: 'rattle!', poke: 'roll', unlockStreak: 35 },
+        { id: 'mantis-shrimp', name: 'Mantis Shrimp', sprite: './assets/tiers/tiger-mantis.png', goldSprite: './assets/tiers/tiger-mantis.png', color: '#ed9359', blub: 'pow!', poke: 'celebrate', unlockStreak: 50 },
+        { id: 'leviathan', name: 'Leviathan', sprite: './assets/tiers/leviathan.png', goldSprite: './assets/tiers/leviathan.png', color: '#3bf4c5', blub: 'roar!', poke: 'celebrate', unlockStreak: 75 },
+      ];
+
+      const AMBIENT_MARKERS = [
+        [60, 'light begins to fade', 'L', false],
+        [200, 'most sunlight stops here', 'R', false],
+        [332, 'deepest scuba dive ever — 332m', 'R', false],
+        [385, 'sperm whales hunt below here', 'L', false],
+        [535, 'emperor penguins dive this deep', 'R', false],
+        [660, 'pressure: 67x the surface', 'L', false],
+        [800, 'siphonophore drift zone', 'R', false],
+        [1040, 'THE MIDNIGHT ZONE', 'L', true],
+        [1240, 'anglerfish territory', 'R', false],
+        [1550, 'sperm whales duel giant squid here', 'L', false],
+        [1850, 'giant squid territory', 'R', false],
+        [2150, 'colossal squid eyes: football-sized', 'L', false],
+        [2500, 'the water is 2°C and utterly black', 'R', false],
+        [3000, 'THE ABYSSAL ZONE', 'L', true],
+        [3800, 'the Titanic rests here — 3,800m', 'R', false],
+        [4400, 'cusk eels patrol the plain', 'L', false],
+        [4900, 'the abyssal plain stretches out', 'R', false],
+        [5500, 'deeper than most submarines survive', 'L', false],
+        [6000, 'THE HADAL ZONE', 'R', true],
+        [6500, 'named for Hades. fitting.', 'L', false],
+        [7000, 'the trench floor — a perfect dive ends here', 'R', true],
+      ];
+
+      const WATER_STOPS = [
+        [0, '#1d5580'],
+        [150, '#123a5e'],
+        [350, '#0b1526'],
+        [800, '#081020'],
+        [1400, '#050a14'],
+        [2600, '#03070f'],
+        [5200, '#02050b'],
+      ];
+
+      // Curated Prompt Sets (including authentic Dive #130 prompts + rich packs)
+      const CLASSIC_PROMPTS = [
+        { q: 'Name a car brand', plankton: ['toyota', 'ford', 'honda', 'chevy', 'chevrolet', 'tesla', 'bmw'], tooclever: ['delorean', 'saab', 'pontiac', 'saturn'], schooler: ['subaru', 'mazda', 'volvo', 'kia', 'hyundai', 'nissan', 'audi', 'porsche'], rare: ['koenigsegg', 'pagani', 'rivian', 'lucid', 'polestar', 'genesis', 'alfa romeo', 'maserati'], deepcut: ['spyker', 'morgan', 'tvr', 'caterham', 'noble', 'tatra', 'holden'], krillion: ['hispanosuiza', 'hispano suiza', 'facel vega', 'isdera'] },
+        { q: 'Name a book series (1,000+ Goodreads ratings on any one book)', plankton: ['harry potter', 'percy jackson', 'hunger games', 'the hunger games', 'twilight', 'lord of the rings'], tooclever: ['dune', 'mistborn', 'wings of fire', 'warrior cats'], schooler: ['narnia', 'maze runner', 'divergent', 'game of thrones', 'a song of ice and fire', 'eragon', 'wheel of time'], rare: ['red rising', 'stormlight archive', 'earthsea', 'his dark materials', 'foundation', 'discworld', 'expanse'], deepcut: ['malazan', 'book of the new sun', 'broken earth', 'gideon the ninth', 'grendel', 'amber'], krillion: ['gormenghast', 'the culture', 'terra ignota'] },
+        { q: 'Name an area in an airport', plankton: ['baggage claim', 'security', 'gate', 'terminal', 'check in', 'tsa'], tooclever: ['duty free', 'tarmac', 'runway'], schooler: ['lounge', 'concourse', 'food court', 'customs', 'boarding gate', 'parking garage', 'arrivals', 'departures'], rare: ['control tower', 'jet bridge', 'hangar', 'passport control', 'observation deck', 'pet relief'], deepcut: ['deicing pad', 'apron', 'skycap', 'lost and found', 'nursery', 'chapel'], krillion: ['fbo', 'fixed base operator', 'holding pattern', 'sensor room'] },
+        { q: 'Name a weapon you throw or a weapon that launches a projectile (no guns)', plankton: ['bow', 'bow and arrow', 'spear', 'boomerang', 'slingshot', 'javelin', 'knife', 'throwing knife'], tooclever: ['trebuchet', 'shuriken', 'throwing star', 'kunai'], schooler: ['catapult', 'crossbow', 'axe', 'tomahawk', 'dart', 'blowgun', 'sling'], rare: ['atlatl', 'bolas', 'chakram', 'ballista', 'harpoon', 'discus', 'glaive'], deepcut: ['mangonel', 'onager', 'hwacha', 'kpinga', 'pilum', 'angon'], krillion: ['woomera', 'plumbata', 'mambele', 'gastraphetes'] },
+        { q: 'Name a restaurant chain where you build your own bowl', plankton: ['chipotle', 'qdoba', 'cava', 'poke', 'sweetgreen', 'panda express'], tooclever: ['noodles and company', 'poke works', 'pokeworks'], schooler: ['panera', 'moe\'s', 'moes', 'bibibop', 'blaze', 'chopt', 'just salad'], rare: ['dig', 'honeygrow', 'nava', 'baja fresh', 'rubios', 'tender greens', 'mendocino'], deepcut: ['vitality bowls', 'ruthie\'s', 'greenleaf', 'spitz', 'koko', 'poki'], krillion: ['sushirrito', 'b.good', 'mixt'] },
+        { q: 'Name a chronic medical condition', plankton: ['diabetes', 'asthma', 'cancer', 'arthritis', 'allergies', 'high blood pressure'], tooclever: ['lupus', 'fibromyalgia', 'crohns', 'celiac'], schooler: ['migraine', 'eczema', 'epilepsy', 'hypertension', 'depression', 'anxiety', 'insomnia', 'copd'], rare: ['psoriasis', 'endometriosis', 'multiple sclerosis', 'gout', 'scoliosis', 'tinnitus', 'narcolepsy'], deepcut: ['ankylosing spondylitis', 'sarcoidosis', 'hashimoto', 'pcos', 'sjogren', 'addison'], krillion: ['ehlers danlos', 'myasthenia gravis', 'hemochromatosis'] },
+        { q: 'Name a part of the field or court in basketball, soccer, American football, cricket, or rugby', plankton: ['endzone', 'end zone', 'three point line', 'penalty box', 'free throw line', 'goal', 'paint', 'key'], tooclever: ['red zone', 'crease', 'pitch', 'try line'], schooler: ['midfield', 'center circle', 'sideline', 'goal line', 'baseline', 'yard line', 'hash marks', 'corner'], rare: ['elbow', 'low post', 'high post', 'boundary', 'touchline', 'six yard box', 'in goal'], deepcut: ['restricted area', 'gully', 'silly mid off', 'dead ball line', 'cow corner'], krillion: ['popping crease', 'bowling crease', 'forward short leg'] },
+        { q: 'Name a fruit with a pit or stone', plankton: ['peach', 'plum', 'cherry', 'avocado', 'mango', 'apricot'], tooclever: ['olive', 'coconut', 'lychee'], schooler: ['nectarine', 'date', 'rambutan', 'persimmon'], rare: ['loquat', 'longan', 'jujube', 'mirabelle'], deepcut: ['damson', 'sloe', 'salak', 'mamey', 'pulasan'], krillion: ['ambarella', 'quandong', 'marula'] },
+        { q: 'Name a country in Europe', plankton: ['france', 'germany', 'spain', 'italy', 'uk', 'england', 'greece'], tooclever: ['vatican', 'vatican city', 'monaco', 'iceland'], schooler: ['austria', 'switzerland', 'belgium', 'netherlands', 'sweden', 'norway', 'denmark', 'finland', 'ireland', 'poland', 'portugal'], rare: ['estonia', 'latvia', 'lithuania', 'slovenia', 'croatia', 'slovakia', 'hungary', 'romania', 'bulgaria'], deepcut: ['andorra', 'san marino', 'liechtenstein', 'moldova', 'montenegro', 'malta', 'luxembourg'], krillion: ['north macedonia', 'faroe islands', 'aland'] },
+        { q: 'Name a chemical element on the periodic table', plankton: ['oxygen', 'hydrogen', 'gold', 'silver', 'carbon', 'helium', 'iron'], tooclever: ['uranium', 'plutonium', 'mercury', 'unobtainium'], schooler: ['nitrogen', 'sodium', 'copper', 'neon', 'calcium', 'chlorine', 'zinc', 'aluminum'], rare: ['bismuth', 'tungsten', 'xenon', 'gallium', 'titanium', 'cobalt', 'platinum'], deepcut: ['osmium', 'iridium', 'antimony', 'niobium', 'strontium', 'molybdenum'], krillion: ['ytterbium', 'praseodymium', 'tennessine'] },
+        { q: 'Name a musical instrument', plankton: ['guitar', 'piano', 'drums', 'violin', 'flute', 'trumpet', 'saxophone'], tooclever: ['theremin', 'ukulele', 'kazoo', 'mayonnaise'], schooler: ['clarinet', 'trombone', 'harp', 'banjo', 'cello', 'viola', 'tuba', 'harmonica'], rare: ['oboe', 'bassoon', 'marimba', 'sitar', 'mandolin', 'accordion', 'harpsichord'], deepcut: ['hurdy gurdy', 'balalaika', 'kalimba', 'dulcimer', 'didgeridoo', 'oud', 'erhu'], krillion: ['celesta', 'glass harmonica', 'nyckelharpa'] },
+        { q: 'Name a planet, moon, or astronomical object', plankton: ['earth', 'mars', 'moon', 'sun', 'jupiter', 'saturn', 'pluto'], tooclever: ['europa', 'titan', 'uranus', 'black hole'], schooler: ['venus', 'mercury', 'neptune', 'comet', 'asteroid', 'nebula', 'supernova'], rare: ['io', 'ganymede', 'callisto', 'phobos', 'deimos', 'triton', 'charon'], deepcut: ['enceladus', 'ceres', 'eris', 'makemake', 'haumea', 'quasar', 'pulsar'], krillion: ['sedna', 'iapetus', 'kuiper belt', 'oort cloud'] },
+        { q: 'Name an ocean creature', plankton: ['shark', 'whale', 'dolphin', 'octopus', 'crab', 'jellyfish', 'turtle'], tooclever: ['blobfish', 'axolotl', 'narwhal', 'krill'], schooler: ['orca', 'stingray', 'seahorse', 'lobster', 'eel', 'seal', 'squid', 'swordfish'], rare: ['nautilus', 'cuttlefish', 'manatee', 'dugong', 'beluga', 'sunfish', 'anglerfish'], deepcut: ['coelacanth', 'oarfish', 'nudibranch', 'mantis shrimp', 'vampire squid', 'goblin shark'], krillion: ['bathynomus', 'bigfin squid', 'dumbo octopus'] },
+        { q: 'Name a board or tabletop game', plankton: ['chess', 'checkers', 'monopoly', 'uno', 'scrabble', 'clue', 'risk'], tooclever: ['catan', 'dnd', 'dungeons and dragons', 'go'], schooler: ['battleship', 'connect four', 'yahtzee', 'backgammon', 'jenga', 'sorry', 'dominoes', 'mahjong'], rare: ['ticket to ride', 'codenames', 'azul', 'splendor', 'othello', 'stratego', 'cribbage'], deepcut: ['carcassonne', 'wingspan', 'mancala', 'hanabi', 'rummikub', 'root'], krillion: ['twilight imperium', 'tak', 'terraforming mars'] },
+        { q: 'Name a weather or storm phenomenon', plankton: ['rain', 'snow', 'tornado', 'hurricane', 'thunderstorm', 'wind', 'hail'], tooclever: ['tsunami', 'monsoon', 'aurora', 'ball lightning'], schooler: ['blizzard', 'typhoon', 'cyclone', 'lightning', 'sleet', 'rainbow', 'drought', 'fog'], rare: ['squall', 'waterspout', 'dust devil', 'heatwave', 'drizzle', 'ice storm'], deepcut: ['derecho', 'haboob', 'microburst', 'virga', 'graupel', 'sundog'], krillion: ['katabatic wind', 'petrichor', 'st elmos fire'] },
+        { q: 'Name a spice or culinary herb', plankton: ['salt', 'pepper', 'cinnamon', 'garlic', 'basil', 'oregano', 'chili'], tooclever: ['saffron', 'cilantro', 'nutmeg', 'msg'], schooler: ['paprika', 'cumin', 'turmeric', 'thyme', 'rosemary', 'parsley', 'mint', 'ginger'], rare: ['cardamom', 'clove', 'sage', 'fennel', 'coriander', 'allspice', 'tarragon'], deepcut: ['sumac', 'fenugreek', 'marjoram', 'anise', 'caraway', 'mace'], krillion: ['asafoetida', 'chervil', 'grains of paradise'] },
+        { q: 'Name a precious stone or mineral', plankton: ['diamond', 'ruby', 'emerald', 'sapphire', 'gold', 'pearl'], tooclever: ['obsidian', 'kryptonite', 'opal', 'bismuth'], schooler: ['amethyst', 'topaz', 'jade', 'turquoise', 'garnet', 'onyx', 'quartz', 'amber'], rare: ['aquamarine', 'peridot', 'moonstone', 'pyrite', 'tourmaline', 'malachite'], deepcut: ['alexandrite', 'tanzanite', 'lapis lazuli', 'fluorite', 'carnelian', 'zircon'], krillion: ['painite', 'hackmanite', 'larimar'] },
+        { q: 'Name a geometric 2D or 3D shape', plankton: ['circle', 'square', 'triangle', 'rectangle', 'cube', 'sphere', 'star'], tooclever: ['tesseract', 'mobius strip', 'dodecahedron'], schooler: ['pentagon', 'hexagon', 'octagon', 'cone', 'cylinder', 'pyramid', 'oval', 'diamond', 'rhombus'], rare: ['trapezoid', 'prism', 'ellipse', 'torus', 'tetrahedron', 'octahedron'], deepcut: ['icosahedron', 'parabola', 'rhomboid', 'nonagon', 'hendecagon'], krillion: ['annulus', 'frustum', 'rhombicosidodecahedron'] },
+        { q: 'Name a dog breed', plankton: ['golden retriever', 'labrador', 'poodle', 'bulldog', 'beagle', 'pug', 'husky'], tooclever: ['corgi', 'shiba inu', 'wiener dog', 'chihuahua'], schooler: ['german shepherd', 'dachshund', 'boxer', 'rottweiler', 'dalmatian', 'doberman', 'greyhound', 'pomeranian'], rare: ['border collie', 'samoyed', 'akita', 'vizsla', 'weimaraner', 'whippet', 'basenji'], deepcut: ['borzoi', 'papillon', 'schipperke', 'komondor', 'saluki', 'kelpie'], krillion: ['azawakh', 'xoloitzcuintli', 'lundehund'] },
+        { q: 'Name a type of bread or pastry', plankton: ['toast', 'bagel', 'croissant', 'donut', 'baguette', 'muffin', 'bun'], tooclever: ['sourdough', 'brioche', 'naan', 'challah'], schooler: ['focaccia', 'ciabatta', 'pretzel', 'pita', 'danish', 'scone', 'rye', 'white bread'], rare: ['babka', 'cannoli', 'palmier', 'galette', 'arepa', 'roti', 'paratha'], deepcut: ['kouign amann', 'injera', 'lavash', 'panettone', 'stollen'], krillion: ['khachapuri', 'pao de queijo', 'sfogliatella'] },
+      ];
+
+      const PACKS = {
+        cinema: {
+          title: 'MOVIES & TV',
+          world: 'cinema',
+          tagline: 'THE SILVER SCREEN',
+          subline: '7 cinema prompts · deeper cuts score higher',
+          prompts: [
+            { q: 'Name a Pixar film', plankton: ['toy story', 'finding nemo', 'cars', 'up', 'inside out', 'incredibles'], tooclever: ['ratatouille', 'wall-e', 'coco'], schooler: ['monsters inc', 'soul', 'luca', 'turning red', 'brave', 'elemental'], rare: ['a bugs life', 'the good dinosaur', 'onward'], deepcut: ['the incredibles 2', 'finding dory', 'monsters university'], krillion: ['tin toy', 'luxo jr', 'gery\'s game'] },
+            { q: 'Name a movie starring Tom Hanks', plankton: ['forrest gump', 'toy story', 'cast away', 'saving private ryan'], tooclever: ['polar express', 'apollo 13', 'big'], schooler: ['the green mile', 'catch me if you can', 'captain phillips', 'sully', 'sleepless in seattle'], rare: ['philadelphia', 'bridge of spies', 'cloud atlas', 'a league of their own'], deepcut: ['joe versus the volcano', 'the burbs', 'road to perdition'], krillion: ['he knows you\'re alone', 'bachelor party', 'turner and hooch'] },
+            { q: 'Name a Christopher Nolan film', plankton: ['inception', 'interstellar', 'oppenheimer', 'the dark knight'], tooclever: ['memento', 'tenet', 'dunkirk'], schooler: ['batman begins', 'the dark knight rises', 'the prestige'], rare: ['insomnia', 'following'], deepcut: ['doodlebug'], krillion: ['quay', 'tarantella'] },
+            { q: 'Name a fictional detective', plankton: ['sherlock holmes', 'batman', 'scooby doo', 'nancy drew'], tooclever: ['benoit blanc', 'columbo', 'hercule poirot'], schooler: ['pikachu', 'inspector gadget', 'shawn spencer', 'monk', 'velma'], rare: ['philip marlowe', 'sam spade', 'miss marple', 'rust cohle'], deepcut: ['auguste dupin', 'dale cooper', 'harry bosch'], krillion: ['cormoran strike', 'father brown', 'kornelius'] },
+            { q: 'Name a classic Disney animated villain', plankton: ['scar', 'maleficent', 'ursula', 'jafar', 'cruella'], tooclever: ['hades', 'yzma', 'frollo'], schooler: ['gaston', 'captain hook', 'evil queen', 'shan yu', 'dr facilier'], rare: ['lady tremaine', 'governor ratcliffe', 'mother gothel'], deepcut: ['horned king', 'professor ratigan', 'madame medusa'], krillion: ['chernabog', 'sykes', 'amos slade'] },
+            { q: 'Name a famous film composer', plankton: ['john williams', 'hans zimmer', 'danny elfman'], tooclever: ['joe hisaishi', 'ennio morricone', 'ludwig goransson'], schooler: ['alan silvestri', 'howard shore', 'michael giacchino', 'james horner'], rare: ['alexandre desplat', 'thomas newman', 'jerry goldsmith'], deepcut: ['bernard herrmann', 'nino rota', 'vangelis'], krillion: ['toru takemitsu', 'ryuichi sakamoto', 'miklos rozsa'] },
+            { q: 'Name a movie set primarily in space', plankton: ['star wars', 'interstellar', 'gravity', 'the martian', 'apollo 13'], tooclever: ['2001', 'moon', 'solaris'], schooler: ['alien', 'guardians of the galaxy', 'wall-e', 'star trek', 'dune'], rare: ['sunshine', 'event horizon', 'ad astra', 'contact'], deepcut: ['silent running', 'dark star', 'europa report'], krillion: ['barbarella', 'outland', 'treasure planet'] },
+          ],
+        },
+        geography: {
+          title: 'GEOGRAPHY ATLAS',
+          world: 'ocean',
+          tagline: 'ATLAS EXPEDITION',
+          subline: '7 geography prompts · pinpoint rare places',
+          prompts: [
+            { q: 'Name a capital city in South America', plankton: ['buenos aires', 'brasilia', 'santiago', 'lima', 'bogota'], tooclever: ['rio', 'sao paulo', 'montevideo'], schooler: ['quito', 'caracas', 'la paz', 'asuncion'], rare: ['sucre', 'georgetown', 'paramaribo'], deepcut: ['cayenne', 'stanley'], krillion: ['yamassoukro'] },
+            { q: 'Name a major desert on Earth', plankton: ['sahara', 'gobi', 'mojave', 'antarctica', 'arabian'], tooclever: ['atacama', 'kalahari', 'sonoran'], schooler: ['chihuahuan', 'great victoria', 'patagonian', 'arctic'], rare: ['namib', 'taklamakan', 'thar', 'karakum'], deepcut: ['kyzylkum', 'dasht-e lut', 'simpson'], krillion: ['registan', 'sechura', 'gibson'] },
+            { q: 'Name a river longer than 2,000 miles', plankton: ['nile', 'amazon', 'mississippi', 'yangtze'], tooclever: ['danube', 'mekong', 'congo'], schooler: ['yellow river', 'missouri', 'yenisei', 'lena', 'ob', 'niger'], rare: ['amur', 'parana', 'yukon', 'mackenzie', 'indus'], deepcut: ['murray', 'volga', 'sao francisco'], krillion: ['irtish', 'salween', 'tunguska'] },
+            { q: 'Name a landlocked country', plankton: ['switzerland', 'austria', 'nepal', 'mongolia', 'bolivia'], tooclever: ['liechtenstein', 'andorra', 'paraguay'], schooler: ['czechia', 'hungary', 'slovakia', 'belarus', 'ethiopia', 'kazakhstan'], rare: ['bhutan', 'uzbekistan', 'kyrgyzstan', 'zambia', 'rwanda'], deepcut: ['lesotho', 'eswatini', 'san marino', 'burkina faso'], krillion: ['transnistria', 'tajikistan', 'turkmenistan'] },
+            { q: 'Name a mountain range', plankton: ['himalayas', 'andes', 'alps', 'rockies', 'rocky mountains', 'appalachians'], tooclever: ['urals', 'caucasus', 'sierra nevada'], schooler: ['pyrenees', 'atlas', 'cascades', 'karakoram'], rare: ['drakensberg', 'carpathians', 'apennines', 'zagros'], deepcut: ['tian shan', 'altai', 'kunlun', 'pamir'], krillion: ['verkhoyansk', 'transantarctic', 'graham land'] },
+            { q: 'Name a sea or strait', plankton: ['mediterranean', 'red sea', 'black sea', 'caribbean', 'dead sea'], tooclever: ['bering strait', 'strait of gibraltar', 'caspian'], schooler: ['baltic sea', 'north sea', 'aegean sea', 'adriatic', 'tasman sea'], rare: ['coral sea', 'sargasso sea', 'strait of hormuz', 'malacca'], deepcut: ['okhotsk', 'chukchi', 'dardanelles', 'bosphorus'], krillion: ['weddell sea', 'skagerrak', 'kattegat'] },
+            { q: 'Name an island nation', plankton: ['japan', 'uk', 'australia', 'iceland', 'cuba', 'ireland'], tooclever: ['madagascar', 'new zealand', 'fiji', 'malta'], schooler: ['jamaica', 'philippines', 'indonesia', 'sri lanka', 'bahamas', 'cyprus'], rare: ['seychelles', 'maldives', 'barbados', 'mauritius', 'tonga'], deepcut: ['palau', 'nauru', 'tuvalu', 'vanuatu', 'kiribati'], krillion: ['comoros', 'sao tome and principe', 'marshall islands'] },
+          ],
+        },
+        sports: {
+          title: 'SPORTS GAUNTLET',
+          world: 'ocean',
+          tagline: 'THE GAUNTLET',
+          subline: '7 sports prompts · deep trivia wins',
+          prompts: [
+            { q: 'Name an Olympic Summer event or sport', plankton: ['swimming', 'basketball', 'track', 'gymnastics', 'soccer'], tooclever: ['breakdancing', 'curling', 'fencing'], schooler: ['archery', 'rowing', 'volleyball', 'tennis', 'judo', 'wrestling', 'boxing'], rare: ['badminton', 'handball', 'water polo', 'triathlon', 'taekwondo', 'sailing'], deepcut: ['modern pentathlon', 'trampoline', 'canoe slalom', 'race walk'], krillion: ['keirin', 'omnium', 'greco roman'] },
+            { q: 'Name an NBA franchise', plankton: ['lakers', 'celtics', 'warriors', 'bulls', 'heat', 'knicks'], tooclever: ['supersonics', 'nets', 'hornets'], schooler: ['spurs', 'mavs', 'mavericks', 'nuggets', 'bucks', 'suns', 'sixers', '76ers'], rare: ['pacers', 'magic', 'jazz', 'kings', 'grizzlies', 'pelicans'], deepcut: ['timberwolves', 'trail blazers', 'wizards', 'pistons'], krillion: ['vancouver grizzlies', 'charlotte bobcats', 'kansas city kings'] },
+            { q: 'Name a tennis Grand Slam tournament or surface', plankton: ['wimbledon', 'us open', 'french open', 'australian open', 'clay', 'grass'], tooclever: ['roland garros', 'hard court'], schooler: ['arthur ashe', 'centre court', 'carpet'], rare: ['har-tru', 'decoturf', 'green clay'], deepcut: ['red clay', 'plexicushion'], krillion: ['laykold', 'rebound ace'] },
+            { q: 'Name a defensive position in American football or soccer', plankton: ['linebacker', 'cornerback', 'safety', 'goalkeeper', 'goalie', 'defender'], tooclever: ['nose tackle', 'libero', 'sweeper'], schooler: ['defensive end', 'defensive tackle', 'center back', 'fullback', 'edge'], rare: ['free safety', 'strong safety', 'wingback', 'nickelback'], deepcut: ['mike linebacker', 'will linebacker', 'sam linebacker'], krillion: ['dimeback', 'star', 'bandit'] },
+            { q: 'Name a chess piece or opening', plankton: ['pawn', 'king', 'queen', 'rook', 'bishop', 'knight'], tooclever: ['sicilian', 'queens gambit', 'bongcloud'], schooler: ['italian game', 'french defense', 'ruy lopez', 'caro kann'], rare: ['king\'s indian', 'london system', 'nimzo indian', 'catalan'], deepcut: ['grunfeld', 'benoni', 'alekhine defense'], krillion: ['pirc defense', 'orangutan', 'bird opening'] },
+            { q: 'Name a Formula 1 team or circuit', plankton: ['ferrari', 'mercedes', 'red bull', 'mclaren', 'monaco', 'silverstone'], tooclever: ['haas', 'williams', 'monza'], schooler: ['aston martin', 'alpine', 'suzuka', 'spa', 'interlagos'], rare: ['sauber', 'rb', 'zandvoort', 'imola', 'baku'], deepcut: ['bahrain', 'jeddah', 'marina bay', 'hungaroring'], krillion: ['paul ricard', 'kyalami', 'magny cours'] },
+            { q: 'Name a winter sport', plankton: ['skiing', 'snowboarding', 'ice skating', 'hockey', 'figure skating'], tooclever: ['curling', 'biathlon', 'luge'], schooler: ['bobsled', 'speed skating', 'ski jumping', 'cross country'], rare: ['skeleton', 'nordic combined', 'short track', 'moguls'], deepcut: ['aerials', 'ski cross', 'bandy'], krillion: ['skijoring', 'ice stock', 'monobob'] },
+          ],
+        },
+        lexicon: {
+          title: 'LEXICON DESK',
+          world: 'ocean',
+          tagline: 'WORDCRAFT DESK',
+          subline: '7 word & language prompts · obscure vocabulary sinks',
+          prompts: [
+            { q: 'Name a word starting with Q (no common "question/queen/quick")', plankton: ['queen', 'quick', 'question', 'quiet', 'quit', 'quiz'], tooclever: ['quasar', 'quark', 'quixotic', 'queue'], schooler: ['quartz', 'quilt', 'quiver', 'quench', 'quarry', 'quorum'], rare: ['quagmire', 'quandary', 'quintet', 'quibble', 'quotient'], deepcut: ['quincunx', 'quodlibet', 'quiddity', 'querulous'], krillion: ['quisquous', 'quoddy', 'quattrocento'] },
+            { q: 'Name a palindrome word or phrase', plankton: ['racecar', 'mom', 'dad', 'radar', 'kayak', 'level', 'civic'], tooclever: ['tacocat', 'aibohphobia', 'rotator'], schooler: ['madam', 'noon', 'refer', 'stats', 'tenet', 'rotor', 'deified'], rare: ['reviver', 'repaper', 'redder', 'solos', 'sagas'], deepcut: ['tattarrattat', 'detartrated', 'kinnikinnik'], krillion: ['malayalam', 'saippuakivikauppias', 'evitative'] },
+            { q: 'Name a literary device or figure of speech', plankton: ['metaphor', 'simile', 'alliteration', 'personification', 'hyperbole'], tooclever: ['oxymoron', 'onomatopoeia', 'zeugma'], schooler: ['irony', 'foreshadowing', 'imagery', 'idiom', 'pun', 'allusion'], rare: ['anaphora', 'chiasmus', 'synecdoche', 'metonymy', 'litotes'], deepcut: ['asyndeton', 'polysyndeton', 'paraprosdokian', 'tmesis'], krillion: ['hendiadys', 'antimetabole', 'syllepsis'] },
+            { q: 'Name a punctuation or typographic symbol', plankton: ['period', 'comma', 'question mark', 'exclamation point', 'apostrophe', 'colon'], tooclever: ['interrobang', 'ampersand', 'octothorpe'], schooler: ['semicolon', 'hyphen', 'dash', 'slash', 'parentheses', 'asterisk'], rare: ['tilde', 'caret', 'pipe', 'ellipses', 'em dash', 'en dash'], deepcut: ['pilcrow', 'section sign', 'dagger', 'cedilla', 'umlaut'], krillion: ['obelisk', 'percontation point', 'aldus leaf'] },
+            { q: 'Name a collective noun for animals (e.g., flock)', plankton: ['flock', 'herd', 'pack', 'school', 'swarm', 'pod'], tooclever: ['murder', 'parliament', 'crash'], schooler: ['pride', 'gaggle', 'colony', 'troop', 'litter', 'hive', 'flock'], rare: ['pandemonium', 'bloat', 'obstinacy', 'shrewdness', 'tower'], deepcut: ['exaltation', 'unkindness', 'ostentation', 'parade'], krillion: ['flamboyance', 'cete', 'wake', 'murmuration'] },
+            { q: 'Name a language spoken by over 10 million people', plankton: ['english', 'spanish', 'french', 'mandarin', 'chinese', 'hindi', 'arabic'], tooclever: ['esperanto', 'klingon', 'latin'], schooler: ['portuguese', 'russian', 'japanese', 'german', 'korean', 'italian', 'turkish'], rare: ['bengali', 'urdu', 'vietnamese', 'thai', 'polish', 'ukrainian', 'persian'], deepcut: ['marathi', 'telugu', 'tamil', 'javanese', 'hausa', 'amharic'], krillion: ['yoruba', 'igbo', 'bhojpuri', 'sundanese'] },
+            { q: 'Name a color name rarely found in an 8-pack crayon box', plankton: ['red', 'blue', 'green', 'yellow', 'purple', 'orange'], tooclever: ['chartreuse', 'cerulean', 'puce'], schooler: ['magenta', 'cyan', 'turquoise', 'teal', 'maroon', 'indigo', 'lavender'], rare: ['vermilion', 'ochre', 'periwinkle', 'burgundy', 'mauve', 'chartreuse'], deepcut: ['viridian', 'celadon', 'gamboge', 'amaranth', 'heliotrope'], krillion: ['smaragdine', 'coquelicot', 'sarcoline'] },
+          ],
+        },
+      };
+
+      // === Exact Krillion WebAudio Synth Engine ===
+      class DescentAudio {
+        constructor() {
+          this.ac = null;
+          this.sfxGain = null;
+          this.muted = localStorage.getItem('krillion-muted') === '1';
+        }
+        ensure() {
+          if (this.muted) return false;
+          if (!this.ac) {
+            const Ctx = window.AudioContext || window.webkitAudioContext;
+            if (!Ctx) return false;
+            this.ac = new Ctx();
+            this.sfxGain = this.ac.createGain();
+            this.sfxGain.gain.value = 0.72;
+            this.sfxGain.connect(this.ac.destination);
+          }
+          if (this.ac.state === 'suspended') this.ac.resume().catch(() => {});
+          return true;
+        }
+        toggleMute() {
+          this.muted = !this.muted;
+          localStorage.setItem('krillion-muted', this.muted ? '1' : '0');
+          if (this.sfxGain) this.sfxGain.gain.value = this.muted ? 0 : 0.72;
+          return this.muted;
+        }
+        env(g, t, a, peak, dur) {
+          g.gain.setValueAtTime(0, t);
+          g.gain.linearRampToValueAtTime(peak, t + a);
+          g.gain.exponentialRampToValueAtTime(0.0001, t + a + dur);
+        }
+        tone({ type = 'sine', f0, f1, dur = 0.2, a = 0.005, peak = 0.25, lp, delay = 0 }) {
+          if (!this.ensure() || !this.ac) return;
+          const d = this.ac.currentTime + delay;
+          const osc = this.ac.createOscillator();
+          osc.type = type;
+          osc.frequency.setValueAtTime(f0, d);
+          if (f1 !== undefined) osc.frequency.exponentialRampToValueAtTime(Math.max(f1, 1), d + dur);
+          const g = this.ac.createGain();
+          this.env(g, d, a, peak, dur);
+          let node = osc;
+          if (lp) {
+            const f = this.ac.createBiquadFilter();
+            f.type = 'lowpass';
+            f.frequency.value = lp;
+            osc.connect(f);
+            node = f;
+          }
+          node.connect(g);
+          g.connect(this.sfxGain);
+          osc.start(d);
+          osc.stop(d + dur + a + 0.05);
+        }
+        noise({ dur = 0.3, lp = 1200, hp, peak = 0.2, a = 0.003, delay = 0, sweepTo }) {
+          if (!this.ensure() || !this.ac) return;
+          const d = this.ac.currentTime + delay;
+          const len = Math.ceil(this.ac.sampleRate * (dur + 0.1));
+          const buf = this.ac.createBuffer(1, len, this.ac.sampleRate);
+          const ch = buf.getChannelData(0);
+          for (let i = 0; i < len; i++) ch[i] = 2 * Math.random() - 1;
+          const src = this.ac.createBufferSource();
+          src.buffer = buf;
+          const filter = this.ac.createBiquadFilter();
+          filter.type = 'lowpass';
+          filter.frequency.setValueAtTime(lp, d);
+          if (sweepTo) filter.frequency.exponentialRampToValueAtTime(sweepTo, d + dur);
+          let node = filter;
+          src.connect(filter);
+          if (hp) {
+            const hpf = this.ac.createBiquadFilter();
+            hpf.type = 'highpass';
+            hpf.frequency.value = hp;
+            filter.connect(hpf);
+            node = hpf;
+          }
+          const g = this.ac.createGain();
+          this.env(g, d, a, peak, dur);
+          node.connect(g);
+          g.connect(this.sfxGain);
+          src.start(d);
+          src.stop(d + dur + 0.1);
+        }
+        arp(freqs, opts = {}) {
+          const step = opts.step || 0.12;
+          freqs.forEach((f0, idx) => this.tone({ type: opts.type || 'triangle', f0, dur: opts.dur || 0.45, peak: opts.peak || 0.15, lp: opts.lp, delay: idx * step }));
+        }
+        play(ev) {
+          switch (ev) {
+            case 'submit': this.tone({ f0: 1150, dur: 0.16, a: 0.003, peak: 0.16 }); break;
+            case 'reject':
+              this.noise({ dur: 0.22, lp: 420, peak: 0.2 });
+              this.tone({ f0: 150, f1: 62, dur: 0.36, peak: 0.22, lp: 700 });
+              break;
+            case 'tierline': this.tone({ type: 'triangle', f0: 780, f1: 1560, dur: 0.07, peak: 0.13, lp: 2500 }); break;
+            case 'sink':
+              this.tone({ f0: 1150, dur: 0.7, a: 0.01, peak: 0.1 });
+              this.noise({ dur: 1.2, lp: 1400, sweepTo: 180, peak: 0.14 });
+              this.tone({ f0: 300, f1: 60, dur: 1.2, peak: 0.1 });
+              break;
+            case 'land_small':
+              this.tone({ f0: 140, f1: 70, dur: 0.25, peak: 0.28, lp: 600 });
+              this.noise({ dur: 0.14, lp: 500, peak: 0.1 });
+              break;
+            case 'land_big':
+              this.tone({ f0: 80, f1: 45, dur: 0.6, peak: 0.36 });
+              this.noise({ dur: 0.7, lp: 900, sweepTo: 200, peak: 0.18, delay: 0.02 });
+              this.tone({ type: 'triangle', f0: 523, dur: 0.4, peak: 0.09, delay: 0.15 });
+              break;
+            case 'krillion':
+              this.tone({ f0: 60, f1: 40, dur: 1.2, peak: 0.34 });
+              this.arp([784, 988, 1175, 1568], { step: 0.13, dur: 0.7, peak: 0.15, lp: 3000 });
+              this.noise({ dur: 1.4, lp: 2500, hp: 1200, peak: 0.05, delay: 0.3 });
+              break;
+            case 'miss':
+              this.tone({ f0: 220, f1: 52, dur: 0.7, peak: 0.24 });
+              this.noise({ dur: 0.5, lp: 400, peak: 0.14, delay: 0.05 });
+              break;
+            case 'tick':
+              this.tone({ f0: 880, dur: 0.07, peak: 0.15 });
+              break;
+            case 'blub': {
+              const s = 0.85 + 0.45 * Math.random();
+              this.tone({ f0: 260 * s, f1: 720 * s, dur: 0.13, peak: 0.22, lp: 2200 });
+              this.noise({ dur: 0.05, lp: 1800, hp: 700, peak: 0.05 });
+              break;
+            }
+            case 'begin':
+              this.noise({ dur: 1.1, lp: 2000, sweepTo: 240, peak: 0.15 });
+              this.tone({ f0: 110, f1: 48, dur: 1.2, peak: 0.32 });
+              this.tone({ type: 'triangle', f0: 784, dur: 0.5, peak: 0.12, lp: 3000 });
+              this.tone({ type: 'triangle', f0: 523, dur: 0.75, peak: 0.12, lp: 3000, delay: 0.22 });
+              break;
+          }
+        }
+      }
+
+      const audio = new DescentAudio();
+
+      // === Persistent Local Stats & Settings ===
+      const STORE_KEY = 'krillionOfflineStateV1';
+      function loadStore() {
+        try {
+          const d = JSON.parse(localStorage.getItem(STORE_KEY) || '{}');
+          return {
+            streak: Number(d.streak || 0),
+            lastDailyDate: d.lastDailyDate || null,
+            dives: Number(d.dives || 0),
+            bestScore: Number(d.bestScore || 0),
+            history: d.history && typeof d.history === 'object' ? d.history : {},
+            buddyId: d.buddyId || 'krill',
+            colorblind: Boolean(d.colorblind),
+            reducedMotion: Boolean(d.reducedMotion),
+          };
+        } catch {
+          return { streak: 0, lastDailyDate: null, dives: 0, bestScore: 0, history: {}, buddyId: 'krill', colorblind: false, reducedMotion: false };
+        }
+      }
+      function saveStore(st) {
+        try { localStorage.setItem(STORE_KEY, JSON.stringify(st)); } catch {}
+      }
+      let store = loadStore();
+      if (store.colorblind) document.documentElement.classList.add('colorblind');
+
+      // === Helper utilities ===
+      function getUtcDateKey(offsetDays = 0) {
+        const d = new Date(Date.now() - offsetDays * 86400000);
+        return d.toISOString().slice(0, 10);
+      }
+      function getDayNumber(dateStr) {
+        const anchor = Date.UTC(2026, 10, 22); // Dive #130 anchor
+        const target = Date.parse(dateStr + 'T00:00:00Z');
+        return 130 + Math.round((target - anchor) / 86400000);
+      }
+      function seededShuffle(arr, seedStr) {
+        let seed = 0;
+        for (let i = 0; i < seedStr.length; i++) seed = (seed * 31 + seedStr.charCodeAt(i)) >>> 0;
+        const copy = arr.slice();
+        for (let i = copy.length - 1; i > 0; i--) {
+          seed = (seed * 1664525 + 1013904223) >>> 0;
+          const j = seed % (i + 1);
+          [copy[i], copy[j]] = [copy[j], copy[i]];
+        }
+        return copy;
+      }
+      function normalize(s) {
+        return s.toLowerCase().trim().replace(/[^a-z0-9\s'-]/g, '').replace(/\s+/g, ' ');
+      }
+
+      function evaluateAnswer(prompt, raw, usedSet) {
+        const clean = normalize(raw);
+        if (!clean || clean.length < 2) return { ok: false, reason: 'type something real.' };
+        if (/^(none|idk|na|asdf|test|yes|no|thing|stuff)$/.test(clean)) return { ok: false, reason: 'be specific — no filler.' };
+        if (usedSet.has(clean)) return { ok: false, reason: 'already used this dive.' };
+        const pWords = normalize(prompt.q).split(' ').filter((w) => w.length > 3);
+        if (pWords.includes(clean)) return { ok: false, reason: 'cannot echo a word from the prompt.' };
+
+        const hit = (list) => Array.isArray(list) && list.some((w) => clean === w || clean.includes(w));
+        if (hit(prompt.plankton)) return { ok: true, tier: 'plankton', clean, note: '41% of divers picked this' };
+        if (hit(prompt.tooclever)) return { ok: true, tier: 'tooclever', clean, note: '24% tried being clever with this' };
+        if (hit(prompt.schooler)) return { ok: true, tier: 'schooler', clean, note: '11% of divers matched this' };
+        if (hit(prompt.rare)) return { ok: true, tier: 'rare', clean, note: '3.2% of divers pulled this' };
+        if (hit(prompt.deepcut)) return { ok: true, tier: 'deepcut', clean, note: '0.6% of divers reached this' };
+        if (hit(prompt.krillion)) return { ok: true, tier: 'krillion', clean, note: '0.04% — trench gem!' };
+
+        // Smart tier placement for unlisted valid creative answers
+        const len = clean.length;
+        const hash = Array.from(clean).reduce((acc, c) => (acc * 33 + c.charCodeAt(0)) % 100, 0);
+        if (len >= 13 || hash < 14) return { ok: true, tier: 'deepcut', clean, note: '0.8% — deep unlisted pull' };
+        if (len >= 7 || hash < 58) return { ok: true, tier: 'rare', clean, note: '3.9% — uncommon pull' };
+        return { ok: true, tier: 'schooler', clean, note: '14% — solid unlisted match' };
+      }
+
+      // === Ocean Canvas Stage & Descent Engine ===
+      const el = {
+        root: document.getElementById('ds-root'),
+        stage: document.getElementById('ds-stage'),
+        sea: document.getElementById('ds-sea'),
+        fore: document.getElementById('ds-fore'),
+        world: document.getElementById('ds-world'),
+        surface: document.getElementById('ds-surface'),
+        title: document.getElementById('ds-title'),
+        tagline: document.getElementById('ds-tagline'),
+        subline: document.getElementById('ds-subline'),
+        vignette: document.getElementById('ds-vignette'),
+        edge: document.getElementById('ds-edge'),
+        flash: document.getElementById('ds-flash'),
+        crt: document.getElementById('ds-crt'),
+        hudDepth: document.getElementById('hud-depth'),
+        hudDots: document.getElementById('hud-dots'),
+        hudCount: document.getElementById('hud-count'),
+        hudScore: document.getElementById('hud-score'),
+        mascot: document.getElementById('ds-mascot'),
+        mascotImg: document.getElementById('ds-mascot-img'),
+        blub: document.getElementById('ds-blub'),
+        muteBtn: document.getElementById('ds-mute'),
+        introOverlay: document.getElementById('intro-overlay'),
+        beginBtn: document.getElementById('begin-btn'),
+        introMetaLabel: document.getElementById('intro-meta-label'),
+        previewPill: document.getElementById('preview-pill'),
+        previewSec: document.getElementById('preview-sec'),
+        dock: document.getElementById('ds-dock'),
+        timeDigits: document.getElementById('time-digits'),
+        input: document.getElementById('ds-input'),
+        fuseFill: document.getElementById('ds-fuse-fill'),
+        reject: document.getElementById('ds-reject'),
+        nextWrap: document.getElementById('next-wrap'),
+        nextBtn: document.getElementById('next-btn'),
+        doneOverlay: document.getElementById('done-overlay'),
+        doneDiveLabel: document.getElementById('done-dive-label'),
+        doneScoreBig: document.getElementById('done-score-big'),
+        doneDepthSub: document.getElementById('done-depth-sub'),
+        doneVerdict: document.getElementById('done-verdict'),
+        doneEmojiBar: document.getElementById('done-emoji-bar'),
+        doneBreakdown: document.getElementById('done-breakdown'),
+        copyResultsBtn: document.getElementById('copy-results-btn'),
+        playUnlimitedBtn: document.getElementById('play-unlimited-btn'),
+        backSurfaceBtn: document.getElementById('back-surface-btn'),
+        copyToast: document.getElementById('copy-toast'),
+        menuTrigger: document.getElementById('menu-trigger'),
+        siteMenu: document.getElementById('site-menu'),
+        menuClose: document.getElementById('menu-close'),
+        hubScreen: document.getElementById('hub-screen'),
+        hubContent: document.getElementById('hub-content'),
+      };
+
+      // Build bobbing KRILLION letters
+      'KRILLION'.split('').forEach((ch, idx) => {
+        const sp = document.createElement('span');
+        sp.textContent = ch;
+        sp.style.animationDelay = `${idx * 0.14}s`;
+        el.title.appendChild(sp);
+      });
+
+      // Populate ocean ambient depth tags
+      AMBIENT_MARKERS.forEach(([depth, txt, side, major]) => {
+        const div = document.createElement('div');
+        div.className = `ds-amb ${side}${major ? ' major' : ''}`;
+        div.style.top = `${depth * 2}px`;
+        div.innerHTML = `<span class="dash">— </span>${txt}`;
+        el.world.appendChild(div);
+      });
+
+      // Load stage sprites
+      const imgSky = new Image(); imgSky.src = './assets/bg-sky.webp';
+      const imgSkyUpper = new Image(); imgSkyUpper.src = './assets/bg-sky-upper-clean.webp';
+      const imgBgTop = new Image(); imgBgTop.src = './assets/bg-top.webp';
+      const imgBgMid = new Image(); imgBgMid.src = './assets/bg-mid.webp';
+      const imgBgTrench = new Image(); imgBgTrench.src = './assets/bg-trench.webp';
+      const imgFish = new Image(); imgFish.src = './assets/tiers/schooler.png';
+
+      function parseHex(h) { return [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)]; }
+      function waterColorAt(d) {
+        if (d <= WATER_STOPS[0][0]) return WATER_STOPS[0][1];
+        for (let i = 0; i < WATER_STOPS.length - 1; i++) {
+          const [d0, c0] = WATER_STOPS[i];
+          const [d1, c1] = WATER_STOPS[i + 1];
+          if (d <= d1) {
+            const t = (d - d0) / (d1 - d0);
+            const [r0, g0, b0] = parseHex(c0);
+            const [r1, g1, b1] = parseHex(c1);
+            return `rgb(${Math.round(r0 + (r1 - r0) * t)},${Math.round(g0 + (g1 - g0) * t)},${Math.round(b0 + (b1 - b0) * t)})`;
+          }
+        }
+        return WATER_STOPS[WATER_STOPS.length - 1][1];
+      }
+
+      // Camera & animated ocean state
+      let camDepth = -45;
+      let targetDepth = -45;
+      let viewDepth = -45;
+      let runningTweens = [];
+      let roundTop = 0;
+      let cardEl = null;
+      let tierLineEls = [];
+      let particles = [];
+      let sparkles = [];
+      let fish = Array.from({ length: 4 }, () => ({
+        x: Math.random() * (window.innerWidth || 420),
+        dOff: (Math.random() - 0.5) * 320,
+        sp: (14 + Math.random() * 20) * (Math.random() < 0.5 ? -1 : 1),
+        s: 8 + Math.random() * 6,
+      }));
+
+      function addTween(dur, ease, upd, done) {
+        runningTweens.push({ t0: performance.now(), dur, ease, upd, done });
+      }
+      const easeInOutCubic = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+
+      function flashStage(color) {
+        el.flash.style.transition = 'none';
+        el.flash.style.background = color;
+        el.flash.style.opacity = '0.42';
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+          el.flash.style.transition = 'opacity 260ms ease-out';
+          el.flash.style.opacity = '0';
+        }));
+      }
+
+      function shakeStage() {
+        el.stage.classList.remove('ds-shake');
+        void el.stage.offsetWidth;
+        el.stage.classList.add('ds-shake');
+        el.crt.classList.remove('zap');
+        void el.crt.offsetWidth;
+        el.crt.classList.add('zap');
+      }
+
+      function spawnBurst(x, y, color, count = 18) {
+        const d = viewDepth + (y - window.innerHeight / 2) / 2;
+        for (let i = 0; i < count; i++) {
+          const ang = Math.random() * Math.PI * 2;
+          const spd = 28 + Math.random() * 110;
+          sparkles.push({ x, d, vx: Math.cos(ang) * spd, vd: Math.sin(ang) * spd * 0.5, r: 1.6 + Math.random() * 2.4, life: 0.7 + Math.random() * 0.6, t: 0, color });
+        }
+      }
+
+      // Mascot interaction
+      function applyBuddySprite(gold = false) {
+        const b = BUDDIES.find((x) => x.id === store.buddyId) || BUDDIES[0];
+        el.mascotImg.src = gold ? b.goldSprite : b.sprite;
+        el.mascot.classList.toggle('gold', gold);
+        el.mascot.style.setProperty('--dsm-color', b.color);
+        el.mascot.style.setProperty('--dsm-glow', `${b.color}b3`);
+        el.blub.textContent = b.blub;
+      }
+      applyBuddySprite(false);
+
+      el.mascot.addEventListener('click', () => {
+        const b = BUDDIES.find((x) => x.id === store.buddyId) || BUDDIES[0];
+        audio.play('blub');
+        el.mascotImg.classList.remove('roll', 'celebrate');
+        void el.mascotImg.offsetWidth;
+        el.mascotImg.classList.add(b.poke || 'roll');
+        el.blub.classList.remove('show');
+        void el.blub.offsetWidth;
+        el.blub.classList.add('show');
+        const r = el.mascot.getBoundingClientRect();
+        spawnBurst(r.left + r.width / 2, r.top + r.height / 2, b.color, 12);
+      });
+
+      function updateMuteButton() {
+        el.muteBtn.classList.toggle('off', audio.muted);
+        el.muteBtn.innerHTML = audio.muted
+          ? '<svg viewBox="0 0 20 16" fill="currentColor"><path d="M2 5h4l5-4v14L6 11H2V5zm12 0l4 6m0-6l-4 6" stroke="currentColor" stroke-width="2" fill="none"/></svg>'
+          : '<svg viewBox="0 0 20 16" fill="currentColor"><path d="M2 5h4l5-4v14L6 11H2V5zm12 1a4 4 0 010 4m3-6a7 7 0 010 8" stroke="currentColor" stroke-width="2" fill="none"/></svg>';
+      }
+      updateMuteButton();
+      el.muteBtn.addEventListener('click', () => { audio.toggleMute(); updateMuteButton(); });
+
+      // Canvas animation loop
+      const seaCtx = el.sea.getContext('2d');
+      const foreCtx = el.fore.getContext('2d');
+      let lastTs = performance.now();
+
+      function tickCanvas(now) {
+        const dt = Math.min(0.05, (now - lastTs) / 1000);
+        lastTs = now;
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+        if (el.sea.width !== w || el.sea.height !== h) {
+          el.sea.width = w; el.sea.height = h;
+          el.fore.width = w; el.fore.height = h;
+        }
+
+        for (let i = runningTweens.length - 1; i >= 0; i--) {
+          const tw = runningTweens[i];
+          const p = Math.min(1, (now - tw.t0) / tw.dur);
+          tw.upd(tw.ease(p));
+          if (p >= 1) { runningTweens.splice(i, 1); if (tw.done) tw.done(); }
+        }
+
+        camDepth += (targetDepth - camDepth) * (1 - Math.exp(-6 * dt));
+        viewDepth = camDepth + (store.reducedMotion ? 0 : 2.2 * Math.sin(now * 0.0006));
+        el.world.style.transform = `translate3d(0,${h / 2 - 2 * viewDepth}px,0)`;
+        el.hudDepth.textContent = `${Math.max(0, Math.round(viewDepth)).toLocaleString()}m`;
+        el.vignette.style.opacity = Math.min(0.72, 0.25 + Math.max(0, viewDepth) / 2400).toFixed(3);
+
+        // Background gradient water
+        const grad = seaCtx.createLinearGradient(0, 0, 0, h);
+        grad.addColorStop(0, waterColorAt(Math.max(0, viewDepth - h / 4)));
+        grad.addColorStop(0.5, waterColorAt(Math.max(0, viewDepth)));
+        grad.addColorStop(1, waterColorAt(Math.max(0, viewDepth + h / 4)));
+        seaCtx.fillStyle = grad;
+        seaCtx.fillRect(0, 0, w, h);
+
+        const toY = (d) => h / 2 + 2 * (d - viewDepth);
+        const drawLayer = (img, d0, d1, alpha) => {
+          if (!img.complete || !img.naturalWidth) return;
+          const y0 = toY(d0), y1 = toY(d1);
+          if (y1 < -40 || y0 > h + 40) return;
+          const tileH = w * (img.naturalHeight / img.naturalWidth);
+          seaCtx.save();
+          seaCtx.globalAlpha = alpha;
+          seaCtx.beginPath();
+          seaCtx.rect(0, y0, w, y1 - y0);
+          seaCtx.clip();
+          for (let y = y0 + Math.floor(Math.max(0, -y0) / tileH) * tileH; y < Math.min(y1, h); y += tileH) {
+            seaCtx.drawImage(img, 0, y, w, tileH + 1);
+          }
+          seaCtx.restore();
+        };
+        drawLayer(imgBgTop, 40, 470, 0.45);
+        drawLayer(imgBgMid, 480, 2620, 0.5);
+        drawLayer(imgBgTrench, 2950, 7060, 0.55);
+
+        // Sky & surface waves at 0m
+        const yZero = toY(0);
+        if (yZero > -40) {
+          if (imgSky.complete && imgSky.naturalWidth) {
+            const skyH = w * (imgSky.naturalHeight / imgSky.naturalWidth);
+            const skyY = yZero + 6 - skyH;
+            if (skyY > 0) { seaCtx.fillStyle = '#81cbe8'; seaCtx.fillRect(0, 0, w, skyY + 1); }
+            seaCtx.drawImage(imgSky, 0, skyY, w, skyH);
+            if (imgSkyUpper.complete && imgSkyUpper.naturalWidth) {
+              const sc = w / imgSkyUpper.naturalWidth;
+              seaCtx.drawImage(imgSkyUpper, 0, skyY - (imgSkyUpper.naturalHeight - 136) * sc, w, imgSkyUpper.naturalHeight * sc);
+            }
+          }
+          seaCtx.beginPath();
+          seaCtx.moveTo(0, yZero);
+          const tSec = now * 0.001;
+          for (let x = 0; x <= w; x += 8) {
+            seaCtx.lineTo(x, yZero + 3 * Math.sin(0.02 * x + 1.6 * tSec) + 2.4 * Math.sin(0.011 * x - tSec));
+          }
+          seaCtx.lineTo(w, yZero + 30);
+          seaCtx.lineTo(0, yZero + 30);
+          seaCtx.closePath();
+          seaCtx.fillStyle = waterColorAt(0);
+          seaCtx.fill();
+        }
+
+        // Foreground marine snow, ambient fish & confetti bursts
+        foreCtx.clearRect(0, 0, w, h);
+        if (Math.random() < 0.25 && particles.length < 48) {
+          particles.push({ x: Math.random() * w, d: viewDepth + (Math.random() - 0.3) * 280, r: 1 + Math.random() * 1.8, alpha: 0.16 + Math.random() * 0.22 });
+        }
+        particles.forEach((p, idx) => {
+          p.d -= 5 * dt;
+          const py = toY(p.d);
+          if (py < -20 || py > h + 20) { particles.splice(idx, 1); return; }
+          foreCtx.fillStyle = `rgba(200,235,255,${p.alpha})`;
+          foreCtx.fillRect(p.x, py, p.r, p.r);
+        });
+
+        fish.forEach((f) => {
+          f.x += f.sp * dt;
+          if (f.x > w + 40) f.x = -40;
+          if (f.x < -40) f.x = w + 40;
+          const fy = toY(Math.max(80, viewDepth + f.dOff));
+          if (fy > 0 && fy < h && viewDepth > 40) {
+            foreCtx.save();
+            foreCtx.globalAlpha = 0.22;
+            foreCtx.translate(f.x, fy);
+            if (f.sp < 0) foreCtx.scale(-1, 1);
+            if (imgFish.complete && imgFish.naturalWidth) foreCtx.drawImage(imgFish, -f.s, -f.s, f.s * 2, f.s * 2);
+            foreCtx.restore();
+          }
+        });
+
+        for (let i = sparkles.length - 1; i >= 0; i--) {
+          const sp = sparkles[i];
+          sp.t += dt;
+          if (sp.t >= sp.life) { sparkles.splice(i, 1); continue; }
+          sp.x += sp.vx * dt;
+          sp.d += sp.vd * dt;
+          foreCtx.globalAlpha = 1 - sp.t / sp.life;
+          foreCtx.fillStyle = sp.color;
+          foreCtx.fillRect(sp.x, toY(sp.d), sp.r * 2, sp.r * 2);
+        }
+        foreCtx.globalAlpha = 1;
+
+        // Position mascot near top or perched on dock
+        const phase = el.root.dataset.phase;
+        if (phase === 'answering') {
+          el.mascot.classList.add('perched');
+          el.mascot.style.transform = `translate3d(${Math.min(w - 80, w / 2 + 230)}px, ${h - 142}px, 0)`;
+        } else {
+          el.mascot.classList.remove('perched');
+          const mx = Math.round(w * 0.5 + Math.sin(now * 0.0012) * 32 - 32);
+          const my = Math.round(phase === 'intro' ? Math.max(84, h * 0.36) : Math.max(84, h * 0.24));
+          el.mascot.style.transform = `translate3d(${mx}px, ${my}px, 0)`;
+        }
+
+        requestAnimationFrame(tickCanvas);
+      }
+      requestAnimationFrame(tickCanvas);
+
+      // === Game Session State Machine ===
+      let session = {
+        mode: 'daily', // daily | unlimited | archive | pack | party
+        packId: 'classic',
+        label: '',
+        dayNum: getDayNumber(getUtcDateKey()),
+        prompts: [],
+        roundIdx: 0,
+        score: 0,
+        results: [],
+        usedAnswers: new Set(),
+        timerId: null,
+        endsAt: 0,
+        submitting: false,
+      };
+
+      function clearRoundWorldEls() {
+        if (cardEl) { cardEl.remove(); cardEl = null; }
+        tierLineEls.forEach((e) => e.remove());
+        tierLineEls = [];
+        document.querySelectorAll('.ds-chip, .ds-landed').forEach((e) => e.remove());
+      }
+
+      function renderHud() {
+        el.hudScore.textContent = String(session.score);
+        el.hudDots.innerHTML = '';
+        for (let i = 0; i < session.prompts.length; i++) {
+          const dot = document.createElement('i');
+          if (i < session.results.length) dot.className = 'done';
+          else if (i === session.roundIdx && el.root.dataset.phase !== 'intro') dot.className = 'cur';
+          el.hudDots.appendChild(dot);
+        }
+        el.hudCount.textContent = el.root.dataset.phase === 'intro' ? 'SURFACE' : `ROUND ${session.roundIdx + 1} / ${session.prompts.length}`;
+      }
+
+      function setupMode({ mode = 'daily', packId = 'classic', dateStr = getUtcDateKey() } = {}) {
+        clearInterval(session.timerId);
+        clearRoundWorldEls();
+        session.mode = mode;
+        session.packId = packId;
+        session.roundIdx = 0;
+        session.score = 0;
+        session.results = [];
+        session.usedAnswers = new Set();
+        session.submitting = false;
+        applyBuddySprite(false);
+
+        const pack = PACKS[packId];
+        el.root.dataset.world = pack?.world || 'ocean';
+        if (mode === 'pack' && pack) {
+          el.tagline.textContent = pack.tagline;
+          el.subline.textContent = pack.subline;
+          session.prompts = seededShuffle(pack.prompts, `pack-${packId}-${Date.now()}`).slice(0, 7);
+          session.label = pack.title;
+        } else if (mode === 'unlimited') {
+          el.tagline.textContent = 'UNLIMITED DIVE';
+          el.subline.textContent = '7 random prompts · endless depth runs';
+          session.prompts = seededShuffle(CLASSIC_PROMPTS, `unl-${Date.now()}-${Math.random()}`).slice(0, 7);
+          session.label = 'Unlimited Classic';
+        } else if (mode === 'party') {
+          el.tagline.textContent = 'PUFFER PARTY';
+          el.subline.textContent = 'Local party round · out-dive the puffer AI bots!';
+          session.prompts = seededShuffle(CLASSIC_PROMPTS, `party-${Date.now()}`).slice(0, 7);
+          session.label = 'Puffer Party';
+        } else {
+          // Daily or Archive
+          const dn = getDayNumber(dateStr);
+          session.dayNum = dn;
+          el.tagline.textContent = mode === 'archive' ? `ARCHIVE DIVE #${dn}` : 'THE DAILY DIVE';
+          el.subline.textContent = '7 prompts · 25 seconds each · rarer answers sink deeper';
+          if (dateStr === '2026-11-22') {
+            session.prompts = CLASSIC_PROMPTS.slice(0, 7);
+          } else {
+            session.prompts = seededShuffle(CLASSIC_PROMPTS, `krillion-daily-${dateStr}`).slice(0, 7);
+          }
+          session.label = `Dive #${dn}`;
+        }
+
+        targetDepth = -45;
+        el.root.dataset.phase = 'intro';
+        el.menuTrigger.dataset.diving = 'false';
+        el.introOverlay.classList.remove('hidden');
+        el.doneOverlay.classList.add('hidden');
+        el.nextWrap.classList.add('hidden');
+        el.previewPill.classList.add('hidden');
+        el.dock.classList.remove('hot');
+        el.edge.classList.remove('danger');
+        el.introMetaLabel.textContent = `${session.label.toLowerCase()} · streak ${store.streak}`;
+        renderHud();
+      }
+
+      function startRound(idx) {
+        clearRoundWorldEls();
+        session.roundIdx = idx;
+        session.submitting = false;
+        const p = session.prompts[idx];
+
+        el.root.dataset.phase = 'preview';
+        el.menuTrigger.dataset.diving = 'true';
+        el.introOverlay.classList.add('hidden');
+        el.nextWrap.classList.add('hidden');
+        el.reject.classList.add('hidden');
+        el.dock.classList.remove('hot');
+        el.edge.classList.remove('danger');
+
+        roundTop = idx === 0 ? 120 : Math.max(120, Math.round(targetDepth) + 120);
+        targetDepth = roundTop + 90;
+
+        // Place tier divider lines below roundTop
+        ['plankton', 'tooclever', 'schooler', 'rare', 'deepcut', 'krillion'].forEach((tid) => {
+          const t = TIERS[tid];
+          const d = roundTop + 260 + t.depth * 820;
+          const line = document.createElement('div');
+          line.className = 'ds-tierline';
+          line.dataset.depth = String(d);
+          line.dataset.tier = tid;
+          line.style.top = `${d * 2}px`;
+          line.style.setProperty('--tc', t.color);
+          line.innerHTML = `<div class="tag"><img src="${t.sprite}" alt=""/><span>${t.name.toUpperCase()} · +${t.score}</span></div>`;
+          el.world.appendChild(line);
+          tierLineEls.push(line);
+        });
+
+        cardEl = document.createElement('div');
+        cardEl.className = 'ds-card ds-px';
+        cardEl.style.top = `${roundTop * 2}px`;
+        cardEl.innerHTML = `<div class="rnd">PROMPT ${idx + 1} OF ${session.prompts.length}</div><div class="prompt"></div><div class="hint">▼ rarer answers sink deeper ▼</div>`;
+        cardEl.querySelector('.prompt').textContent = p.q;
+        el.world.appendChild(cardEl);
+
+        renderHud();
+
+        el.previewPill.classList.remove('hidden');
+        let sec = 2;
+        el.previewSec.textContent = String(sec);
+        const pTimer = setInterval(() => {
+          sec -= 1;
+          if (sec > 0) {
+            el.previewSec.textContent = String(sec);
+          } else {
+            clearInterval(pTimer);
+            el.previewPill.classList.add('hidden');
+            beginAnswering();
+          }
+        }, 700);
+      }
+
+      function beginAnswering() {
+        el.root.dataset.phase = 'answering';
+        el.input.value = '';
+        el.input.focus();
+        const TOTAL_MS = 25000;
+        session.endsAt = performance.now() + TOTAL_MS;
+        let lastSec = 25;
+
+        clearInterval(session.timerId);
+        session.timerId = setInterval(() => {
+          const rem = Math.max(0, session.endsAt - performance.now());
+          const sec = Math.ceil(rem / 1000);
+          el.timeDigits.textContent = String(sec);
+          el.fuseFill.style.transform = `scaleX(${rem / TOTAL_MS})`;
+
+          const hot = rem <= 3500;
+          el.dock.classList.toggle('hot', hot);
+          el.timeDigits.classList.toggle('hot', hot);
+          el.edge.classList.toggle('danger', hot);
+
+          if (hot && sec !== lastSec && sec > 0) audio.play('tick');
+          lastSec = sec;
+
+          if (rem <= 0) {
+            clearInterval(session.timerId);
+            landRound(null, null);
+          }
+        }, 50);
+      }
+
+      el.dock.addEventListener('submit', (e) => {
+        e.preventDefault();
+        if (el.root.dataset.phase !== 'answering' || session.submitting) return;
+        const p = session.prompts[session.roundIdx];
+        const verdict = evaluateAnswer(p, el.input.value, session.usedAnswers);
+        if (!verdict.ok) {
+          audio.play('reject');
+          el.reject.textContent = verdict.reason;
+          el.reject.classList.remove('hidden', 'ds-reject-shake');
+          void el.reject.offsetWidth;
+          el.reject.classList.add('ds-reject-shake');
+          return;
+        }
+        session.submitting = true;
+        session.usedAnswers.add(verdict.clean);
+        clearInterval(session.timerId);
+        audio.play('submit');
+        landRound(el.input.value.trim(), verdict);
+      });
+
+      function landRound(rawText, verdict) {
+        el.root.dataset.phase = 'feedback';
+        el.dock.classList.remove('hot');
+        el.edge.classList.remove('danger');
+        el.reject.classList.add('hidden');
+        if (cardEl) cardEl.classList.add('gone');
+
+        const tierObj = verdict ? TIERS[verdict.tier] : null;
+        const points = tierObj ? tierObj.score : 0;
+        const destDepth = tierObj ? roundTop + 260 + tierObj.depth * 820 : roundTop + 170;
+
+        const chip = document.createElement('div');
+        chip.className = `ds-chip${verdict?.tier === 'krillion' ? ' gold' : ''}`;
+        chip.style.setProperty('--cc', tierObj ? tierObj.color : 'var(--tier-miss)');
+        chip.style.top = `${(roundTop + 60) * 2}px`;
+        chip.textContent = rawText ? rawText.toUpperCase() : 'TIME UP';
+        el.world.appendChild(chip);
+
+        audio.play('sink');
+        const startD = viewDepth;
+        const dur = verdict?.tier === 'krillion' ? 2400 : verdict?.tier === 'deepcut' ? 2100 : 1500;
+        const passed = new Set();
+
+        addTween(dur, easeInOutCubic, (t) => {
+          targetDepth = startD + (destDepth - startD) * t;
+          const chipY = (startD + 40 + (destDepth - startD - 40) * t) * 2;
+          chip.style.top = `${chipY}px`;
+          tierLineEls.forEach((line) => {
+            const ld = Number(line.dataset.depth);
+            if (!passed.has(ld) && targetDepth >= ld) {
+              passed.add(ld);
+              line.classList.add('passed');
+              audio.play('tierline');
+            }
+          });
+        }, () => {
+          chip.remove();
+          if (tierObj) {
+            if (verdict.tier === 'krillion') {
+              audio.play('krillion');
+              applyBuddySprite(true);
+              flashStage('#ffd166');
+              shakeStage();
+            } else if (verdict.tier === 'deepcut' || verdict.tier === 'rare') {
+              audio.play('land_big');
+              flashStage('#4de3ff');
+              shakeStage();
+            } else {
+              audio.play('land_small');
+            }
+            spawnBurst(window.innerWidth / 2, window.innerHeight * 0.45, verdict.tier === 'krillion' ? '#ffd166' : '#4de3ff', 28);
+          } else {
+            audio.play('miss');
+          }
+
+          session.score += points;
+          el.hudScore.classList.remove('slam');
+          void el.hudScore.offsetWidth;
+          el.hudScore.classList.add('slam');
+
+          session.results.push({
+            prompt: session.prompts[session.roundIdx].q,
+            answer: rawText || '—',
+            tier: tierObj ? tierObj.id : 'miss',
+            emoji: tierObj ? tierObj.emoji : '⬛',
+            name: tierObj ? tierObj.name : 'Miss',
+            score: points,
+            note: verdict ? verdict.note : 'the clock beat you to it',
+          });
+
+          const landed = document.createElement('div');
+          landed.className = `ds-landed${tierObj ? '' : ' miss'}`;
+          landed.style.top = `${destDepth * 2}px`;
+          landed.style.setProperty('--tc', tierObj ? tierObj.color : 'var(--tier-miss-lit)');
+          landed.innerHTML =
+            (tierObj ? `<img class="icon" src="${tierObj.sprite}" alt=""/>` : '') +
+            `<div class="tname">${tierObj ? tierObj.name.toUpperCase() : 'NOTHING LANDED'}</div>` +
+            `<div class="tans">${rawText ? `“${rawText}”` : '—'}</div>` +
+            `<div class="tpts"><b>+${points} PTS</b>${points > 0 ? ` · sink ${(points * 10).toLocaleString()}m` : ''}</div>` +
+            `<div class="tsub">${verdict ? verdict.note : 'out of time'}</div>`;
+          el.world.appendChild(landed);
+
+          renderHud();
+          el.nextBtn.textContent = session.roundIdx >= session.prompts.length - 1 ? 'SEE RESULTS →' : 'NEXT PROMPT →';
+          el.nextWrap.classList.remove('hidden');
+        });
+      }
+
+      function showDoneScreen() {
+        el.root.dataset.phase = 'done';
+        el.menuTrigger.dataset.diving = 'false';
+        el.nextWrap.classList.add('hidden');
+        el.doneOverlay.classList.remove('hidden');
+
+        store.dives += 1;
+        if (session.score > store.bestScore) store.bestScore = session.score;
+        if (session.mode === 'daily') {
+          const today = getUtcDateKey();
+          if (store.lastDailyDate !== today) {
+            store.streak += 1;
+            store.lastDailyDate = today;
+          }
+          store.history[today] = session.score;
+        }
+        saveStore(store);
+
+        const band = [...SCORE_BANDS].reverse().find((b) => session.score >= b.min) || SCORE_BANDS[0];
+        el.doneDiveLabel.textContent = `${session.label} complete`;
+        el.doneScoreBig.textContent = String(session.score);
+        el.doneDepthSub.textContent = `-${(session.score * 10).toLocaleString()}m`;
+        el.doneVerdict.textContent = band.verdict;
+        el.doneEmojiBar.textContent = session.results.map((r) => r.emoji).join(' ');
+
+        el.doneBreakdown.innerHTML = '';
+        session.results.forEach((r, idx) => {
+          const row = document.createElement('div');
+          row.className = 'round-row';
+          row.innerHTML = `
+            <div style="min-width:0">
+              <div style="font-size:14px;color:var(--color-drift)">#${idx + 1} · ${r.prompt}</div>
+              <div style="font-size:20px;color:var(--color-foam)">${r.emoji} ${r.answer} <span style="font-size:15px;color:var(--color-drift)">(${r.name})</span></div>
+            </div>
+            <div style="font-size:22px;color:var(--color-lumen-cyan);white-space:nowrap">+${r.score}</div>
+          `;
+          el.doneBreakdown.appendChild(row);
+        });
+      }
+
+      el.beginBtn.addEventListener('click', () => {
+        audio.play('begin');
+        startRound(0);
+      });
+
+      el.nextBtn.addEventListener('click', () => {
+        if (session.roundIdx >= session.prompts.length - 1) showDoneScreen();
+        else startRound(session.roundIdx + 1);
+      });
+
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && el.root.dataset.phase === 'feedback' && !el.nextWrap.classList.contains('hidden')) {
+          el.nextBtn.click();
+        }
+      });
+
+      el.copyResultsBtn.addEventListener('click', () => {
+        const share = `Krillion ${session.label}\n${session.score}/700 (-${(session.score * 10).toLocaleString()}m)\n${session.results.map((r) => r.emoji).join('')}`;
+        navigator.clipboard?.writeText(share).catch(() => {});
+        el.copyToast.textContent = 'Copied dive card to clipboard!';
+      });
+
+      el.playUnlimitedBtn.addEventListener('click', () => setupMode({ mode: 'unlimited' }));
+      el.backSurfaceBtn.addEventListener('click', () => setupMode({ mode: 'daily' }));
+
+      // === Menu & Secondary Views ===
+      function openHub(viewName) {
+        el.hubScreen.classList.remove('hidden');
+        el.hubContent.innerHTML = '';
+
+        const header = (eyebrow, title, subtitle) => `
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+            <div>
+              <p style="font-size:14px;letter-spacing:0.2em;color:var(--color-lumen-cyan);text-transform:uppercase">${eyebrow}</p>
+              <h1 style="font-size:clamp(42px,8vw,64px);line-height:1;color:var(--color-foam);text-shadow:-2px 2px #ff5d8f,2px -2px #4de3ff">${title}</h1>
+              <p style="font-size:19px;color:var(--color-drift);margin-top:6px">${subtitle}</p>
+            </div>
+            <button id="hub-back-btn" class="btn-quiet" type="button">← Back</button>
+          </div>
+        `;
+
+        if (viewName === 'packs') {
+          el.hubContent.innerHTML = header('THEMED PACKS', 'CHOOSE A PACK', 'Curated 7-prompt thematic descents.') + `<div class="pack-grid">${Object.entries(PACKS).map(([id, pk]) => `
+            <button class="pack-card" data-pack="${id}">
+              <img src="./assets/cards/${id === 'cinema' ? 'movies' : id}.webp" alt=""/>
+              <div class="pack-card-body">
+                <div style="font-size:22px;color:var(--color-foam)">${pk.title}</div>
+                <div style="font-size:15px;color:var(--color-drift);margin-top:4px">${pk.subline}</div>
+              </div>
+            </button>
+          `).join('')}</div>`;
+          el.hubContent.querySelectorAll('[data-pack]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+              el.hubScreen.classList.add('hidden');
+              setupMode({ mode: 'pack', packId: btn.dataset.pack });
+              audio.play('begin');
+              startRound(0);
+            });
+          });
+        } else if (viewName === 'archive') {
+          const days = Array.from({ length: 10 }, (_, i) => getUtcDateKey(i + 1));
+          el.hubContent.innerHTML = header('ARCHIVE', 'PAST DIVES', 'Replay earlier daily sets.') + `<div class="hub-panel">${days.map((d) => `
+            <div class="round-row">
+              <div>
+                <div style="font-size:22px;color:var(--color-foam)">Dive #${getDayNumber(d)}</div>
+                <div style="font-size:15px;color:var(--color-drift)">${d}</div>
+              </div>
+              <button class="btn-quiet" data-date="${d}" type="button">Dive ⟲</button>
+            </div>
+          `).join('')}</div>`;
+          el.hubContent.querySelectorAll('[data-date]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+              el.hubScreen.classList.add('hidden');
+              setupMode({ mode: 'archive', dateStr: btn.dataset.date });
+              audio.play('begin');
+              startRound(0);
+            });
+          });
+        } else if (viewName === 'account') {
+          el.hubContent.innerHTML = header('MY KRILLION', 'DIVE LOG & BUDDIES', 'Select any unlocked creature to swim alongside your dives.') + `
+            <div class="hub-panel" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;text-align:center">
+              <div><div style="font-size:38px;color:var(--color-lumen-cyan)">${store.dives}</div><div style="font-size:14px;color:var(--color-drift)">DIVES</div></div>
+              <div><div style="font-size:38px;color:var(--color-lumen-pink)">${store.streak}</div><div style="font-size:14px;color:var(--color-drift)">STREAK</div></div>
+              <div><div style="font-size:38px;color:#ffd166">${store.bestScore}</div><div style="font-size:14px;color:var(--color-drift)">BEST SCORE</div></div>
+            </div>
+            <div class="buddy-grid">${BUDDIES.map((b) => {
+              const earned = store.streak >= b.unlockStreak || b.unlockStreak === 0 || store.dives >= b.unlockStreak;
+              return `
+                <button class="buddy-card" data-buddy="${b.id}" data-earned="${earned}" data-selected="${store.buddyId === b.id}">
+                  <img width="52" height="52" src="${b.sprite}" alt="${b.name}"/>
+                  <div style="font-size:17px;color:var(--color-foam)">${b.name}</div>
+                  <small style="font-size:13px;color:var(--color-drift)">${earned ? 'Ready' : `Unlock at ${b.unlockStreak} dives`}</small>
+                </button>
+              `;
+            }).join('')}</div>
+          `;
+          el.hubContent.querySelectorAll('[data-buddy]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+              if (btn.dataset.earned !== 'true') return;
+              store.buddyId = btn.dataset.buddy;
+              saveStore(store);
+              applyBuddySprite(false);
+              openHub('account');
+            });
+          });
+        } else if (viewName === 'settings') {
+          el.hubContent.innerHTML = header('SETTINGS', 'PREFERENCES', 'Display and audio controls.') + `
+            <div class="hub-panel">
+              <div class="round-row">
+                <div><div style="font-size:21px">Sound Effects</div><div style="font-size:14px;color:var(--color-drift)">Retro underwater synth chimes & radar ticks</div></div>
+                <button id="set-sound" class="btn-quiet" type="button">${audio.muted ? 'OFF' : 'ON'}</button>
+              </div>
+              <div class="round-row">
+                <div><div style="font-size:21px">High Contrast / Colorblind</div><div style="font-size:14px;color:var(--color-drift)">Boosts tier label legibility & reduces scanlines</div></div>
+                <button id="set-cb" class="btn-quiet" type="button">${store.colorblind ? 'ON' : 'OFF'}</button>
+              </div>
+              <div class="round-row">
+                <div><div style="font-size:21px">Reduced Motion</div><div style="font-size:14px;color:var(--color-drift)">Stops camera bobbing during prompts</div></div>
+                <button id="set-rm" class="btn-quiet" type="button">${store.reducedMotion ? 'ON' : 'OFF'}</button>
+              </div>
+            </div>
+          `;
+          document.getElementById('set-sound').onclick = () => { audio.toggleMute(); updateMuteButton(); openHub('settings'); };
+          document.getElementById('set-cb').onclick = () => {
+            store.colorblind = !store.colorblind;
+            document.documentElement.classList.toggle('colorblind', store.colorblind);
+            saveStore(store);
+            openHub('settings');
+          };
+          document.getElementById('set-rm').onclick = () => {
+            store.reducedMotion = !store.reducedMotion;
+            saveStore(store);
+            openHub('settings');
+          };
+        } else if (viewName === 'faq') {
+          el.hubContent.innerHTML = header('FAQ', 'HOW KRILLION WORKS', 'Seven prompts. Obscure answers sink deeper.') + `
+            <div class="hub-panel" style="font-size:18px;line-height:1.4;color:var(--color-drift)">
+              <p><b style="color:var(--tier-plankton)">🫧 Plankton (+10 · 100m):</b> The top obvious picks everyone blurts out.</p>
+              <p><b style="color:var(--tier-tooclever)">🤡 Too Clever (+15 · 150m):</b> The "quirky" answer half the players reach for.</p>
+              <p><b style="color:var(--tier-schooler)">🐟 Schooler (+30 · 300m):</b> Solid answers swimming in the middle pack.</p>
+              <p><b style="color:var(--tier-rare)">🦑 Rare (+60 · 600m):</b> Genuinely uncommon picks below the thermocline.</p>
+              <p><b style="color:var(--tier-deepcut)">🏮 Deep Cut (+85 · 850m):</b> Obscure trivia few players ever think of.</p>
+              <p><b style="color:var(--tier-krillion)">🌟 One in a Krillion (+100 · 1,000m):</b> Trench floor gems. 700 pts reaches 7,000m.</p>
+            </div>
+          `;
+        }
+
+        const backBtn = document.getElementById('hub-back-btn');
+        if (backBtn) backBtn.addEventListener('click', () => el.hubScreen.classList.add('hidden'));
+      }
+
+      el.menuTrigger.addEventListener('click', () => el.siteMenu.showModal());
+      el.menuClose.addEventListener('click', () => el.siteMenu.close());
+      el.siteMenu.addEventListener('click', (e) => {
+        if (e.target === el.siteMenu) el.siteMenu.close();
+      });
+
+      document.querySelectorAll('.sm-nav > button').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.sm-nav > button').forEach((b) => b.removeAttribute('aria-current'));
+          btn.setAttribute('aria-current', 'page');
+          el.siteMenu.close();
+          const nav = btn.dataset.nav;
+          if (nav === 'daily' || nav === 'unlimited' || nav === 'party') {
+            el.hubScreen.classList.add('hidden');
+            setupMode({ mode: nav });
+            if (nav !== 'daily') { audio.play('begin'); startRound(0); }
+          } else {
+            openHub(nav);
+          }
+        });
+      });
+
+      document.querySelectorAll('[data-quick]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const q = btn.dataset.quick;
+          if (q === 'unlimited') {
+            setupMode({ mode: 'unlimited' });
+            audio.play('begin');
+            startRound(0);
+          } else {
+            openHub(q);
+          }
+        });
+      });
+
+      setupMode({ mode: 'daily' });
+    </script>
+  </body>
+</html>

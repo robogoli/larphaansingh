@@ -27,6 +27,10 @@ export function resolveCoverUrl(rawCover: string, hasProxy: boolean): string {
     .replace('{HTML_URL}', UPSTREAM_HTML_BASE)
     .trim();
 
+  if (expanded.startsWith('./')) {
+    return assetPath(expanded.slice(2));
+  }
+
   if (hasProxy && !isStaticDeployment()) {
     return `/api/cover?src=${encodeURIComponent(rawCover)}`;
   }
@@ -35,10 +39,15 @@ export function resolveCoverUrl(rawCover: string, hasProxy: boolean): string {
 
 export function resolveGameSourceUrl(rawUrl: string): string {
   if (!rawUrl || typeof rawUrl !== 'string') return '';
-  return rawUrl
+  const expanded = rawUrl
     .replace('{HTML_URL}', UPSTREAM_HTML_BASE)
     .replace('{COVER_URL}', UPSTREAM_COVERS_BASE)
     .trim();
+
+  if (expanded.startsWith('./')) {
+    return assetPath(expanded.slice(2));
+  }
+  return expanded;
 }
 
 export interface CatalogLoadResult {

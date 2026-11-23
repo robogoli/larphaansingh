@@ -1,5 +1,5 @@
 import express from 'express';
-import type { Request, Response } from 'express';
+import type { NextFunction, Request, Response } from 'express';
 import fs from 'fs';
 import path from 'path';
 import dns from 'dns';
@@ -1132,6 +1132,271 @@ window.google.ima = window.google.ima || {
         res.status(502).send('Proxy fetch failed');
       }
     }
+  });
+
+  // Full Next.js-aware live reverse proxy for Krillion (https://krillion.io)
+  const KRILLION_ORIGIN = 'https://krillion.io';
+  const KRILLION_BRIDGE_SCRIPT = `<script data-krillion-bridge="1">
+(function() {
+  if (window.__KRILLION_BRIDGE__) return;
+  window.__KRILLION_BRIDGE__ = true;
+  try {
+    if (location.pathname === '/krillion-live' || location.pathname.startsWith('/krillion-live/')) {
+      var cleanPath = location.pathname.slice('/krillion-live'.length) || '/';
+      history.replaceState(history.state, '', cleanPath + location.search + location.hash);
+    }
+  } catch (e) {}
+  var origFetch = window.fetch;
+  if (origFetch) {
+    window.fetch = function(input, init) {
+      try {
+        var u = typeof input === 'string' ? input : (input && input.url) || '';
+        if (u.indexOf('https://party.krillion.io') === 0) {
+          var rewritten = '/api/ext/https/party.krillion.io' + u.slice('https://party.krillion.io'.length);
+          if (typeof input === 'string') input = rewritten;
+          else input = new Request(rewritten, input);
+        }
+      } catch (e) {}
+      return origFetch.call(this, input, init);
+    };
+  }
+  window.addEventListener('message', function(ev) {
+    if (!ev || !ev.data || ev.data.type !== 'DAKNUX_KEY_EVENT') return;
+    var d = ev.data;
+    var evt = new KeyboardEvent(d.action === 'up' ? 'keyup' : 'keydown', {
+      key: d.key,
+      code: d.code,
+      keyCode: d.keyCode || 0,
+      which: d.keyCode || 0,
+      bubbles: true,
+      cancelable: true
+    });
+    var target = document.activeElement && document.activeElement !== document.body
+      ? document.activeElement
+      : (document.body || window);
+    target.dispatchEvent(evt);
+  });
+})();
+</script>`;
+
+  function rewriteKrillionHtml(html: string): string {
+    let out = html
+      .replace(/https:\/\/krillion\.io/gi, '')
+      .replace(/https:\/\/party\.krillion\.io/gi, '/api/ext/https/party.krillion.io')
+      .replace(/https:\/\/www\.googletagmanager\.com\/[^"']+/gi, '/api/stub/empty.js')
+      .replace(/https:\/\/scripts\.mediavine\.com\/[^"']+/gi, '/api/stub/empty.js')
+      .replace(/https:\/\/challenges\.cloudflare\.com\/turnstile\/[^"']+/gi, '/api/stub/empty.js');
+    if (!out.includes('__KRILLION_BRIDGE__')) {
+      if (/<head[^>]*>/i.test(out)) {
+        out = out.replace(/<head[^>]*>/i, (m) => `${m}${KRILLION_BRIDGE_SCRIPT}`);
+      } else {
+        out = `${KRILLION_BRIDGE_SCRIPT}${out}`;
+      }
+    }
+    return out;
+  }
+
+  async function proxyKrillionRequest(req: Request, res: Response, targetPathAndQuery: string): Promise<void> {
+    if (req.method === 'OPTIONS') {
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', '*');
+      res.status(204).end();
+      return;
+    }
+
+    const cleanTarget = targetPathAndQuery.startsWith('/') ? targetPathAndQuery : `/${targetPathAndQuery}`;
+    const targetUrl = `${KRILLION_ORIGIN}${cleanTarget}`;
+    const lowerPath = cleanTarget.split('?')[0].toLowerCase();
+    const isImmutableStatic =
+      req.method === 'GET' &&
+      (lowerPath.startsWith('/_next/static/') ||
+        lowerPath.startsWith('/tiers/') ||
+        lowerPath.startsWith('/gen/') ||
+        lowerPath.startsWith('/buddy-fx/') ||
+        lowerPath === '/water-bg.webp' ||
+        lowerPath === '/icon.png' ||
+        lowerPath === '/apple-icon.png');
+
+    const cacheKey = `krillion:${targetUrl}`;
+    if (isImmutableStatic) {
+      const cached = getCached(cacheKey);
+      if (cached) {
+        res.setHeader('Content-Type', cached.contentType);
+        res.setHeader('Cache-Control', 'public, max-age=86400');
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.status(cached.status).send(cached.body);
+        return;
+      }
+    }
+
+    try {
+      const reqHeaders: Record<string, string> = {
+        'User-Agent':
+          typeof req.headers['user-agent'] === 'string'
+            ? req.headers['user-agent']
+            : 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/124.0.0.0 Safari/537.36',
+      };
+      for (const h of [
+        'accept',
+        'content-type',
+        'cookie',
+        'rsc',
+        'next-router-state-tree',
+        'next-router-prefetch',
+        'next-url',
+      ]) {
+        const v = req.headers[h];
+        if (typeof v === 'string') reqHeaders[h] = v;
+      }
+
+      const fetchInit: RequestInit = {
+        method: req.method,
+        signal: AbortSignal.timeout(20000),
+        headers: reqHeaders,
+        redirect: 'manual',
+      };
+      if (req.method !== 'GET' && req.method !== 'HEAD' && req.body !== undefined) {
+        fetchInit.body = typeof req.body === 'string' ? req.body : JSON.stringify(req.body);
+      }
+
+      const upstream = await fetch(targetUrl, fetchInit);
+
+      const getSetCookie = (upstream.headers as unknown as { getSetCookie?: () => string[] }).getSetCookie;
+      const setCookies = typeof getSetCookie === 'function' ? getSetCookie.call(upstream.headers) : [];
+      if (setCookies.length > 0) {
+        res.setHeader(
+          'Set-Cookie',
+          setCookies.map((c) =>
+            c
+              .replace(/;\s*Domain=[^;]+/gi, '')
+              .replace(/;\s*SameSite=Strict/gi, '; SameSite=Lax')
+              .replace(/;\s*Secure/gi, req.secure ? '; Secure' : '')
+          )
+        );
+      }
+
+      if (upstream.status >= 300 && upstream.status < 400) {
+        const loc = upstream.headers.get('location');
+        if (loc) {
+          const rewrittenLoc = loc.startsWith(KRILLION_ORIGIN)
+            ? `/krillion-live${loc.slice(KRILLION_ORIGIN.length)}`
+            : loc.startsWith('/')
+              ? `/krillion-live${loc}`
+              : loc;
+          res.redirect(upstream.status, rewrittenLoc);
+          return;
+        }
+      }
+
+      const contentType = upstream.headers.get('content-type') || 'application/octet-stream';
+      const buf = Buffer.from(await upstream.arrayBuffer());
+
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      if (contentType.includes('text/html')) {
+        const rewrittenHtml = rewriteKrillionHtml(buf.toString('utf-8'));
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        res.setHeader('Cache-Control', 'no-cache');
+        res.status(upstream.status).send(rewrittenHtml);
+        return;
+      }
+
+      if (isImmutableStatic && upstream.ok) {
+        setCached(cacheKey, {
+          body: buf,
+          contentType,
+          status: upstream.status,
+          timestamp: Date.now(),
+        });
+        res.setHeader('Cache-Control', 'public, max-age=86400');
+      } else {
+        const cacheControl = upstream.headers.get('cache-control');
+        if (cacheControl) res.setHeader('Cache-Control', cacheControl);
+      }
+
+      res.setHeader('Content-Type', contentType);
+      res.status(upstream.status).send(buf);
+    } catch (err) {
+      console.error('Krillion proxy error for', targetUrl, err);
+      if (!res.headersSent) {
+        res.status(502).send('Krillion upstream unavailable.');
+      }
+    }
+  }
+
+  app.all(['/krillion-live', '/krillion-live/*'], (req: Request, res: Response) => {
+    const sub = req.originalUrl.replace(/^\/krillion-live/, '') || '/';
+    void proxyKrillionRequest(req, res, sub);
+  });
+
+  app.use(['/_next', '/tiers', '/gen', '/buddy-fx'], (req: Request, res: Response) => {
+    void proxyKrillionRequest(req, res, req.originalUrl);
+  });
+
+  app.get(['/water-bg.webp', '/og.png', '/icon.png', '/apple-icon.png'], (req: Request, res: Response) => {
+    void proxyKrillionRequest(req, res, req.originalUrl);
+  });
+
+  app.all(
+    [
+      '/unlimited',
+      '/unlimited/*',
+      '/party',
+      '/party/*',
+      '/archive',
+      '/archive/*',
+      '/packs',
+      '/packs/*',
+      '/account',
+      '/account/*',
+      '/friends',
+      '/friends/*',
+      '/faq',
+      '/faq/*',
+      '/calibration',
+      '/calibration/*',
+    ],
+    (req: Request, res: Response) => {
+      void proxyKrillionRequest(req, res, req.originalUrl);
+    }
+  );
+
+  app.all(
+    [
+      '/api/today',
+      '/api/today/*',
+      '/api/submit',
+      '/api/reveal',
+      '/api/suggest',
+      '/api/answer-popularity',
+      '/api/unlimited',
+      '/api/unlimited/*',
+      '/api/packs/*',
+      '/api/party/*',
+      '/api/account/*',
+      '/api/announcements/*',
+      '/api/feedback',
+      '/api/restore',
+      '/api/unlock',
+      '/api/calibration',
+      '/api/calibration/*',
+    ],
+    (req: Request, res: Response) => {
+      void proxyKrillionRequest(req, res, req.originalUrl);
+    }
+  );
+
+  app.get('/', (req: Request, res: Response, next: NextFunction) => {
+    const isRsc =
+      req.headers.rsc === '1' ||
+      req.query._rsc !== undefined ||
+      Boolean(req.headers['next-router-state-tree']);
+    const isIframeDoc = req.headers['sec-fetch-dest'] === 'iframe';
+    if (isRsc || isIframeDoc) {
+      void proxyKrillionRequest(req, res, req.originalUrl);
+      return;
+    }
+    next();
   });
 
   if (IS_PROD) {

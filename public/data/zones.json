@@ -6421,5 +6421,13 @@
     "special": [
       "port"
     ]
+  },
+  {
+    "id": 631,
+    "name": "Krillion: The Daily Dive",
+    "cover": "./games/krillion/cover.svg",
+    "url": "./games/krillion/index.html",
+    "author": "LarphaanSingh Original",
+    "featured": true
   }
 ]

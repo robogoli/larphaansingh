@@ -98,8 +98,13 @@ export default function ZoneViewer({
   const [inlineSrcDoc, setInlineSrcDoc] = useState<string | null>(null);
   const [showEmbedHelp, setShowEmbedHelp] = useState(false);
 
-  const proxyGameSrc = `/api/game/${zone.id}?v=${reloadNonce}`;
-  const blockedFromEmbed = !hasProxy && (!zone.isValid || !zone.isEmbeddable);
+  const isSelfHosted = zone.url.startsWith('./');
+  const isKrillionLive = zone.id === 631 && hasProxy;
+  const useProxyFrame = (hasProxy && !isSelfHosted) || isKrillionLive;
+  const proxyGameSrc = isKrillionLive
+    ? `/krillion-live/?v=${reloadNonce}`
+    : `/api/game/${zone.id}?v=${reloadNonce}`;
+  const blockedFromEmbed = !useProxyFrame && (!zone.isValid || !zone.isEmbeddable);
 
   useEffect(() => {
     setLoading(!blockedFromEmbed);
@@ -145,9 +150,11 @@ export default function ZoneViewer({
       onToast('Popup blocked', 'Allow popups for this site to open games in an about:blank tab.', 'warning');
       return;
     }
-    const frameTarget = hasProxy
-      ? `${window.location.origin}/api/game/${zone.id}`
-      : zone.rawSourceUrl;
+    const frameTarget = isKrillionLive
+      ? `${window.location.origin}/krillion-live/`
+      : useProxyFrame
+        ? `${window.location.origin}/api/game/${zone.id}`
+        : zone.rawSourceUrl;
     const safeTitle = (cloakTitle || zone.name).replace(/</g, '&lt;').replace(/>/g, '&gt;');
     const safeIcon = cloakFavicon || assetPath('assets/gmail-icon.svg');
     win.document.open();
@@ -509,9 +516,9 @@ export default function ZoneViewer({
         ) : (
           <iframe
             ref={iframeRef}
-            key={`${zone.id}-${reloadNonce}-${inlineSrcDoc ? 'inline' : hasProxy ? 'proxy' : 'direct'}`}
-            src={hasProxy ? proxyGameSrc : inlineSrcDoc ? undefined : zone.rawSourceUrl}
-            srcDoc={!hasProxy && inlineSrcDoc ? inlineSrcDoc : undefined}
+            key={`${zone.id}-${reloadNonce}-${inlineSrcDoc ? 'inline' : useProxyFrame ? 'proxy' : 'direct'}`}
+            src={useProxyFrame ? proxyGameSrc : inlineSrcDoc ? undefined : zone.rawSourceUrl}
+            srcDoc={!useProxyFrame && inlineSrcDoc ? inlineSrcDoc : undefined}
             title={zone.name}
             referrerPolicy="no-referrer"
             allow="autoplay; fullscreen; gamepad; clipboard-read; clipboard-write"

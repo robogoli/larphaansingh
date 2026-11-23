@@ -5,7 +5,7 @@ import { resolveCoverUrl, resolveGameSourceUrl } from './runtime';
 const KEYWORD_CATEGORY_RULES: Array<[RegExp, CategoryId]> = [
   [/\b(drift|race|racing|kart|moto|car|drive|truck|moto x3m|hill climb|polytrack|escape road)\b/i, 'racing'],
   [/\b(soccer|football|basketball|baseball|golf|tennis|hockey|boxing|retro bowl|fifa|nba|volley|cricket|sport)\b/i, 'sports'],
-  [/\b(chess|sudoku|2048|tetris|wordle|puzzle|crossword|minesweeper|solitaire|mahjong|nonogram|unblock|portal|water sort|cut the rope|brain)\b/i, 'puzzle'],
+  [/\b(chess|sudoku|2048|tetris|wordle|krillion|puzzle|crossword|minesweeper|solitaire|mahjong|nonogram|unblock|portal|water sort|cut the rope|brain)\b/i, 'puzzle'],
   [/\b(bloons|tower defense|kingdom|empire|chess|civilization|clash|rts|strategy|polytopia|risk|plague|age of war)\b/i, 'strategy'],
   [/\b(simulator|tycoon|bitlife|papa'?s|cooking|farming|minecraft|eaglercraft|stardew|sandbox|flight|city|planet|universe)\b/i, 'simulation'],
   [/\b(2 player|2-player|multiplayer|1v1|io\b|versus|co-op|tag|rooftop snipers|getaway shootout|fireboy|watergirl)\b/i, 'multiplayer'],

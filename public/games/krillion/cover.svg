@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0ea5e9" />
+      <stop offset="38%" stop-color="#0369a1" />
+      <stop offset="75%" stop-color="#0a1f44" />
+      <stop offset="100%" stop-color="#020614" />
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="35%" r="55%">
+      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.45" />
+      <stop offset="100%" stop-color="#020614" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#sea)" />
+  <rect width="512" height="512" fill="url(#glow)" />
+  <!-- Depth rings -->
+  <circle cx="256" cy="210" r="145" fill="none" stroke="#38bdf8" stroke-opacity="0.18" stroke-width="2" stroke-dasharray="8 8" />
+  <circle cx="256" cy="210" r="102" fill="none" stroke="#7dd3fc" stroke-opacity="0.28" stroke-width="2" />
+  <!-- Stylised deep-sea krill / submersible silhouette -->
+  <g transform="translate(256 205)">
+    <ellipse cx="0" cy="0" rx="58" ry="28" fill="#071a38" stroke="#38bdf8" stroke-width="4" />
+    <circle cx="-22" cy="-2" r="11" fill="#38bdf8" />
+    <circle cx="8" cy="-2" r="9" fill="#7dd3fc" fill-opacity="0.7" />
+    <path d="M56 0 L84 -18 L84 18 Z" fill="#38bdf8" />
+    <path d="M-10 -28 L8 -44 L24 -28 Z" fill="#0ea5e9" />
+  </g>
+  <!-- Marine snow particles -->
+  <circle cx="96" cy="110" r="3" fill="#bae6fd" opacity="0.65" />
+  <circle cx="410" cy="135" r="4" fill="#7dd3fc" opacity="0.5" />
+  <circle cx="140" cy="310" r="2.5" fill="#bae6fd" opacity="0.55" />
+  <circle cx="380" cy="285" r="3" fill="#38bdf8" opacity="0.6" />
+  <circle cx="220" cy="90" r="2" fill="#e0f2fe" opacity="0.7" />
+  <!-- Title -->
+  <text x="256" y="408" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-weight="800" font-size="60" letter-spacing="3" fill="#f0f9ff">KRILLION</text>
+  <text x="256" y="446" text-anchor="middle" font-family="ui-monospace, monospace" font-weight="600" font-size="20" letter-spacing="4" fill="#7dd3fc">THE DAILY DIVE</text>
+</svg>
