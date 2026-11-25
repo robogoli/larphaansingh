@@ -995,7 +995,9 @@
         list-style: none;
         display: flex;
       }
-      .ds-mute {
+      .ds-mute,
+      .ds-settings-trig,
+      .ds-wardrobe-trig {
         z-index: 12;
         color: #7d93b8;
         cursor: pointer;
@@ -1009,16 +1011,107 @@
         padding: 0;
         display: flex;
         position: absolute;
-        top: 70px;
         right: 10px;
         box-shadow: 0 0 0 2px #060d1ae6;
       }
+      .ds-mute { top: 70px; }
+      .ds-settings-trig { top: 102px; }
+      .ds-wardrobe-trig { top: 134px; }
       @media (min-width: 700px) {
         .ds-mute { top: 84px; }
+        .ds-settings-trig { top: 116px; }
+        .ds-wardrobe-trig { top: 148px; }
       }
-      .ds-mute svg { width: 20px; height: 16px; display: block; }
-      .ds-mute:hover { color: #4de3ff; }
+      .ds-mute svg,
+      .ds-settings-trig svg,
+      .ds-wardrobe-trig svg { width: 18px; height: 18px; display: block; }
+      .ds-mute:hover,
+      .ds-settings-trig:hover,
+      .ds-wardrobe-trig:hover { color: #4de3ff; opacity: 1; }
       .ds-mute.off { color: #7d93b873; }
+      .ds-root[data-phase='done'] .ds-settings-trig,
+      .ds-root[data-phase='done'] .ds-wardrobe-trig { z-index: 30; }
+
+      /* Settings & Wardrobe Modals matching krillion.io */
+      .k-modal-backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 80;
+        background: #02050cd6;
+        display: grid;
+        place-items: center;
+        padding: max(18px, env(safe-area-inset-top)) 18px max(18px, env(safe-area-inset-bottom));
+        overflow-y: auto;
+      }
+      .k-modal-dialog {
+        width: min(100%, 430px);
+        max-height: min(720px, 90dvh);
+        overflow-y: auto;
+        background: repeating-linear-gradient(0deg, #00000029 0 1px, transparent 1px 3px), var(--color-shallow);
+        color: var(--color-foam);
+        padding: 22px;
+        position: relative;
+        box-shadow: 0 0 0 3px var(--color-abyss), 0 0 0 5px #1b3050, 10px 10px 0 #02050bd9, 0 0 38px #4de3ff24;
+      }
+      .k-modal-close {
+        position: absolute;
+        top: 16px;
+        right: 16px;
+        width: 34px;
+        height: 30px;
+        background: #101d33;
+        color: var(--color-drift);
+        border: 0;
+        font-size: 24px;
+        line-height: 1;
+        cursor: pointer;
+        box-shadow: 0 0 0 2px #050a14, 0 0 0 4px #1b3050, 0 3px 0 4px #0d1a2e;
+      }
+      .k-modal-close:hover { color: var(--color-foam); box-shadow: 0 0 0 2px #050a14, 0 0 0 4px var(--color-lumen-cyan), 0 3px 0 4px #123048; }
+      .k-wardrobe-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+        margin-top: 14px;
+      }
+      .k-wardrobe-key {
+        background: #0d1830;
+        border: 1px solid var(--hairline);
+        padding: 12px 6px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        color: var(--color-foam);
+        text-align: center;
+      }
+      .k-wardrobe-key[aria-pressed='true'] {
+        border-color: var(--color-lumen-cyan);
+        box-shadow: 0 0 12px #4de3ff40;
+      }
+      .k-wardrobe-key.locked { cursor: not-allowed; opacity: 0.72; }
+      .k-wardrobe-key.locked img { filter: grayscale(1); opacity: 0.4; }
+      .k-wardrobe-name { font-size: 16px; line-height: 1.1; }
+      .k-wardrobe-req { font-size: 13px; color: var(--color-drift); }
+
+      .ds-correction-pill {
+        position: absolute;
+        left: 50%;
+        bottom: calc(92px + env(safe-area-inset-bottom));
+        transform: translateX(-50%);
+        z-index: 10;
+        background: #0b1526eb;
+        padding: 6px 14px 5px;
+        font-size: 17px;
+        color: #7d93b8;
+        box-shadow: 0 0 0 2px #060d1a, 0 0 0 4px #1b3050;
+        white-space: nowrap;
+        max-width: 92vw;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .ds-correction-pill b { color: #e8f1ff; font-weight: 400; }
 
       /* Mascot */
       .ds-mascot {
@@ -1076,10 +1169,12 @@
         to { opacity: 0; transform: translateY(-16px); }
       }
 
-      /* Done Screen */
+      /* Done Screen matching krillion.io verbatim */
       .ds-done {
         z-index: 10;
-        padding: 20px 20px calc(30px + env(safe-area-inset-bottom));
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
+        padding: 20px 20px calc(36px + env(safe-area-inset-bottom));
         user-select: text;
         background: linear-gradient(#050a14db, #050a14b8 30%, #050a14c7);
         position: absolute;
@@ -1091,8 +1186,9 @@
         margin: 0 auto;
         display: flex;
         flex-direction: column;
-        gap: 20px;
-        padding-bottom: 40px;
+        gap: 32px;
+        padding-top: 6px;
+        padding-bottom: 48px;
       }
       .ds-done-krill {
         letter-spacing: 0.06em;
@@ -1101,18 +1197,97 @@
         font-size: 30px;
         line-height: 1;
       }
+      .fathom > .fathom-depth {
+        color: #7d93b88c;
+        letter-spacing: 0.05em;
+        margin-left: auto;
+        font-size: 14px;
+        text-transform: lowercase;
+      }
+      .divebar-stage {
+        position: relative;
+        height: 240px;
+        margin-bottom: 18px;
+      }
+      .divebar-gridline {
+        position: absolute;
+        left: 34px;
+        right: 0;
+        border-top: 1px dashed var(--hairline);
+      }
+      .divebar-gridlabel {
+        position: absolute;
+        left: 0;
+        transform: translateY(-50%);
+        font-size: 13px;
+        color: #7d93b899;
+        font-variant-numeric: tabular-nums;
+      }
+      .divebar-cols {
+        position: absolute;
+        inset: 0 0 0 38px;
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+      }
+      .divebar-col { position: relative; }
+      .divebar-line {
+        position: absolute;
+        left: 50%;
+        top: 0;
+        width: 1px;
+        transform: translateX(-50%);
+        opacity: 0.5;
+      }
+      @keyframes sink {
+        0% { opacity: 0; transform: translate(-50%, -14px); }
+        100% { opacity: 1; transform: translate(-50%, -50%); }
+      }
+      .divebar-node {
+        position: absolute;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        animation: 0.5s ease-out both sink;
+      }
+      .divebar-num {
+        position: absolute;
+        bottom: -22px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 14px;
+        color: #7d93b8b3;
+      }
+      .bearing-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 8px 6px;
+        border-bottom: 1px solid var(--hairline);
+      }
+      .bearing-row:last-child { border-bottom: 0; }
+      .bearing-range {
+        font-size: 16px;
+        font-variant-numeric: tabular-nums;
+        width: 4.5rem;
+        flex-shrink: 0;
+      }
+      .bearing-verdict {
+        font-size: 18px;
+        line-height: 1.2;
+        flex: 1;
+        min-width: 0;
+      }
       .btn-descend {
         letter-spacing: 0.14em;
         color: #050a14;
         background: #ff5d8f;
-        padding: 11px 18px 9px;
-        font-size: 20px;
+        padding: 12px 18px 10px;
+        font-size: 21px;
         border: 0;
         cursor: pointer;
         text-transform: uppercase;
         box-shadow: 0 0 0 2px #050a14, 0 3px 0 2px #7d1d3c, 0 0 16px #ff5d8f73;
       }
-      .btn-descend:active { transform: translateY(2px); }
+      .btn-descend:active { transform: translateY(2px); box-shadow: 0 0 0 2px #050a14, 0 1px 0 2px #7d1d3c; }
       .btn-quiet {
         letter-spacing: 0.14em;
         color: #e8f1ff;
@@ -1127,6 +1302,90 @@
       .btn-quiet:hover {
         color: #4de3ff;
         box-shadow: 0 0 0 2px #050a14, 0 0 0 4px #4de3ffa6;
+      }
+      .keep-diving-btn {
+        display: block;
+        width: 100%;
+        text-align: center;
+        letter-spacing: 0.16em;
+        color: #050a14;
+        background: #4de3ff;
+        padding: 13px 18px 11px;
+        font-size: 22px;
+        border: 0;
+        cursor: pointer;
+        text-transform: uppercase;
+        box-shadow: 0 0 0 2px #050a14, 0 4px 0 2px #146c85, 0 0 20px #4de3ff66;
+      }
+      .keep-diving-btn:active { transform: translateY(2px); }
+      .catch-item {
+        padding: 10px 0;
+        border-bottom: 1px solid var(--hairline);
+      }
+      .catch-item:last-child { border-bottom: 0; }
+      .catch-trigger {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        width: 100%;
+        text-align: left;
+        background: none;
+        border: 0;
+        color: inherit;
+        cursor: pointer;
+        padding: 2px 0;
+      }
+      .catch-sheet {
+        margin-top: 10px;
+        margin-left: 28px;
+        padding: 10px;
+        background: #0b152699;
+        border: 1px solid var(--hairline);
+      }
+      .catch-filters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-bottom: 8px;
+      }
+      .catch-pill {
+        border: 1px solid var(--hairline);
+        background: transparent;
+        padding: 2px 8px;
+        font-size: 14px;
+        cursor: pointer;
+        color: var(--color-foam);
+      }
+      .catch-pill[aria-pressed='true'] {
+        background: rgba(255, 255, 255, 0.1);
+      }
+      .catch-search {
+        width: 100%;
+        margin-bottom: 8px;
+        padding: 5px 8px;
+        background: rgba(16, 29, 51, 0.7);
+        border: 1px solid var(--hairline);
+        color: var(--color-foam);
+        font-size: 16px;
+        outline: none;
+      }
+      .catch-list {
+        max-height: 240px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        padding-right: 4px;
+      }
+      .catch-ans-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        padding: 4px 6px;
+        font-size: 16px;
+      }
+      .catch-ans-row.mine {
+        background: rgba(77, 227, 255, 0.12);
       }
       .hub-panel {
         border: 1px solid var(--hairline);
@@ -1146,6 +1405,49 @@
       }
       .round-row:last-child { border-bottom: 0; }
 
+      /* Puffer Party Arena */
+      .party-arena {
+        border: 1px solid var(--hairline);
+        background: #081221f0;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        box-shadow: 0 0 0 2px #050a14, 0 0 24px #4de3ff20;
+      }
+      .party-players {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(115px, 1fr));
+        gap: 10px;
+      }
+      .party-player {
+        border: 1px solid var(--hairline);
+        background: #0d1830;
+        padding: 10px 8px;
+        text-align: center;
+      }
+      .party-player[data-active='true'] {
+        border-color: var(--color-lumen-pink);
+        box-shadow: 0 0 14px #ff5d8f4d;
+      }
+      .party-player[data-out='true'] {
+        opacity: 0.4;
+        filter: grayscale(1);
+      }
+      .party-puffer-wrap {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 0;
+      }
+      .party-puffer-img {
+        width: 84px;
+        height: 84px;
+        image-rendering: pixelated;
+        transition: transform 0.25s ease-out;
+      }
+
       /* Hub Sub-Views (Packs, Archive, My Krillion, Party, FAQ) */
       .hub-screen {
         position: fixed;
@@ -1164,7 +1466,7 @@
       }
       .pack-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
         gap: 16px;
       }
       .pack-card {
@@ -1178,22 +1480,21 @@
         flex-direction: column;
         transition: border-color 0.15s, transform 0.12s;
       }
-      .pack-card:hover {
+      .pack-card:hover:not(:disabled) {
         border-color: var(--color-lumen-cyan);
         transform: translateY(-2px);
       }
+      .pack-card:disabled { cursor: default; opacity: 0.65; }
       .pack-card img {
         width: 100%;
-        height: 120px;
+        height: 132px;
         object-fit: cover;
         image-rendering: pixelated;
       }
-      .pack-card-body {
-        padding: 14px;
-      }
+      .pack-card-body { padding: 14px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
       .buddy-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(125px, 1fr));
         gap: 12px;
       }
       .buddy-card {
@@ -1327,6 +1628,12 @@
 
         <div id="ds-crt" class="ds-crt"></div>
         <button id="ds-mute" class="ds-mute" type="button" aria-label="toggle sound"></button>
+        <button id="ds-settings-trig" class="ds-settings-trig" type="button" aria-label="Open settings" title="Settings">
+          <svg viewBox="0 0 20 20" fill="currentColor" shape-rendering="crispEdges"><path d="M6 4H14V6H16V14H14V16H6V14H4V6H6Z M8 1H12V4H8Z M8 16H12V19H8Z M1 8H4V12H1Z M16 8H19V12H16Z M8 8H12V12H8Z"></path></svg>
+        </button>
+        <button id="ds-wardrobe-trig" class="ds-wardrobe-trig" type="button" aria-label="Open wardrobe" title="Dive buddy">
+          <svg viewBox="0 0 20 20" shapeRendering="crispEdges" fill="currentColor"><path fill-rule="evenodd" d="M4 3H8V5H4Z M12 3H16V5H12Z M2 5H18V9H2Z M5 9H15V17H5Z M9 5H11V7H9Z"></path></svg>
+        </button>
       </div>
 
       <!-- Intro Overlay -->
@@ -1345,8 +1652,8 @@
           </details>
           <button id="begin-btn" class="ds-begin-btn" type="button">▼ BEGIN DESCENT ▼</button>
           <div class="ds-intro-meta">
-            <span id="intro-meta-label">dive #130 · streak 0</span>
-            <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <span id="intro-meta-label">dive #131 · streak 0</span>
+            <div style="display:flex;gap:10px;flex-wrap:wrap">
               <button type="button" data-quick="archive">ARCHIVE ⟲</button>
               <button type="button" data-quick="packs">THEMED PACKS</button>
               <button type="button" data-quick="unlimited">UNLIMITED ∞</button>
@@ -1356,9 +1663,10 @@
       </div>
 
       <!-- Preview Overlay -->
-      <div id="preview-pill" class="ds-preview-pill hidden">GET READY · <b id="preview-sec">2</b></div>
+      <div id="preview-pill" class="ds-preview-pill hidden">descending · the clock starts in <b id="preview-sec">2</b></div>
 
       <!-- Answer Dock -->
+      <div id="ds-correction-pill" class="ds-correction-pill hidden"></div>
       <div id="ds-reject" class="ds-reject hidden"></div>
       <form id="ds-dock" class="ds-dock" autocomplete="off">
         <div class="ds-dock-inner">
@@ -1373,7 +1681,7 @@
               id="ds-input"
               class="ds-input"
               type="text"
-              placeholder="name one..."
+              placeholder="type one answer…"
               maxlength="44"
               enterkeyhint="send"
             />
@@ -1387,37 +1695,71 @@
 
       <!-- Next Prompt Wrap -->
       <div id="next-wrap" class="ds-next-wrap hidden">
-        <button id="next-btn" class="ds-next-btn" type="button">NEXT PROMPT →</button>
+        <button id="next-btn" class="ds-next-btn" type="button">DESCEND ▼</button>
       </div>
 
-      <!-- Done Overlay -->
+      <!-- Done Overlay matching real krillion.io ending screen -->
       <div id="done-overlay" class="ds-done hidden">
         <div class="ds-done-inner">
+          <!-- Hero Score Header -->
           <div>
-            <div style="display:flex;align-items:baseline;justify-content:space-between">
+            <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px">
               <span class="ds-done-krill">KRILLION</span>
-              <span id="done-dive-label" style="font-size:16px;letter-spacing:0.14em;color:var(--color-drift);text-transform:uppercase">Dive complete</span>
+              <span id="done-dive-label" style="font-size:15px;letter-spacing:0.14em;color:var(--color-drift);text-transform:uppercase">DIVE #131 COMPLETE</span>
             </div>
-            <div style="display:flex;align-items:baseline;gap:10px;margin-top:10px">
-              <span id="done-score-big" style="font-size:78px;line-height:1;color:var(--color-foam)">0</span>
-              <span id="done-depth-sub" style="font-size:20px;color:var(--color-lumen-cyan)">-0m</span>
+            <div style="display:flex;align-items:baseline;gap:10px;margin-top:14px">
+              <span id="done-score-big" style="font-size:80px;line-height:1;color:var(--color-foam);font-variant-numeric:tabular-nums">0</span>
+              <span id="done-depth-sub" style="font-size:20px;color:var(--color-lumen-cyan);font-variant-numeric:tabular-nums">-0m</span>
             </div>
-            <p id="done-verdict" style="font-size:20px;color:var(--color-drift);margin-top:4px"></p>
+            <div id="done-dist-wrap" style="margin-top:10px"></div>
           </div>
 
-          <div id="done-emoji-bar" style="font-size:26px;letter-spacing:4px"></div>
+          <!-- 7-Column Vertical Dive Log Depth Chart -->
+          <section>
+            <p class="fathom"><span>dive log</span><span class="fathom-depth">deeper = rarer</span></p>
+            <div id="done-divebar" class="divebar-stage"></div>
+          </section>
 
-          <div class="hub-panel" id="done-breakdown"></div>
+          <!-- The Bearing (Score Bands Table) -->
+          <section>
+            <p class="fathom" style="margin-bottom:4px"><span>the bearing</span></p>
+            <ul id="done-bearing"></ul>
+          </section>
 
-          <div style="display:flex;flex-wrap:wrap;gap:12px">
-            <button id="copy-results-btn" class="btn-descend" type="button">Copy results</button>
-            <button id="play-unlimited-btn" class="btn-quiet" type="button">Unlimited ∞</button>
-            <button id="back-surface-btn" class="btn-quiet" type="button">Surface</button>
+          <!-- Actions (Copy Result + Share + Keep Diving + Archive/Packs) -->
+          <div style="display:flex;flex-direction:column;gap:16px">
+            <div style="display:flex;gap:12px">
+              <button id="copy-results-btn" class="btn-descend" style="flex:1" type="button">Copy result</button>
+              <button id="native-share-btn" class="btn-quiet hidden" type="button">Share…</button>
+            </div>
+            <button id="play-unlimited-btn" class="keep-diving-btn" type="button">KEEP DIVING ∞</button>
+            <div style="display:flex;gap:10px;flex-wrap:wrap">
+              <button id="done-archive-btn" class="btn-quiet" type="button">ARCHIVE ⟲</button>
+              <button id="done-packs-btn" class="btn-quiet" type="button">THEMED PACKS →</button>
+              <button id="back-surface-btn" class="btn-quiet" type="button">SURFACE</button>
+            </div>
           </div>
-          <p id="copy-toast" style="font-size:17px;color:var(--color-lumen-cyan);min-height:22px"></p>
+
+          <!-- The Catch (Expandable Per-Round Breakdown & Answer Sheets) -->
+          <section>
+            <p class="fathom" style="margin-bottom:4px"><span>the catch</span><span class="fathom-depth">tap a round for every answer</span></p>
+            <ul id="done-breakdown"></ul>
+          </section>
+
+          <!-- Logbook Summary -->
+          <section>
+            <p class="fathom" style="margin-bottom:8px"><span>logbook</span></p>
+            <p id="done-logbook" style="font-size:16px;letter-spacing:0.1em;color:var(--color-drift);text-transform:uppercase;font-variant-numeric:tabular-nums"></p>
+          </section>
+
+          <!-- Live Countdown to Next Dive -->
+          <p id="done-countdown-wrap" style="font-size:16px;letter-spacing:0.12em;color:var(--color-drift);text-transform:uppercase"></p>
         </div>
       </div>
     </div>
+
+    <!-- Quick Settings / Wardrobe Modal Container -->
+    <div id="k-modal" class="k-modal-backdrop hidden"></div>
 
     <!-- Secondary Hub Screens (Archive / Packs / Party / Account / Settings / FAQ) -->
     <div id="hub-screen" class="hub-screen hidden">
@@ -1425,34 +1767,36 @@
     </div>
 
     <script>
-      // === Exact Krillion Tiers, Score Bands & Ambient Depth Markers ===
+      // === Exact Krillion Tiers, Score Bands & Mascots ===
       const TIERS = {
-        plankton: { id: 'plankton', name: 'Plankton', score: 10, emoji: '🫧', blurb: 'The answer everyone blurts out.', depth: 0.08, color: 'var(--tier-plankton)', sprite: './assets/tiers/schooler.png' },
-        tooclever: { id: 'tooclever', name: 'Too Clever', score: 15, emoji: '🤡', blurb: 'A famously “obscure” pick. Everyone reaches for it.', depth: 0.18, color: 'var(--tier-tooclever)', sprite: './assets/tiers/schooler.png' },
+        plankton: { id: 'plankton', name: 'Plankton', score: 10, emoji: '🫧', blurb: 'The answer everyone blurts out.', depth: 0.08, color: 'var(--tier-plankton)', sprite: './assets/tiers/plankton.png' },
+        tooclever: { id: 'tooclever', name: 'Too Clever', score: 15, emoji: '🤡', blurb: 'A famously “obscure” pick. Everyone reaches for it.', depth: 0.18, color: 'var(--tier-tooclever)', sprite: './assets/tiers/tooclever.png' },
         schooler: { id: 'schooler', name: 'Schooler', score: 30, emoji: '🐟', blurb: 'Solid — swims with the school.', depth: 0.36, color: 'var(--tier-schooler)', sprite: './assets/tiers/schooler.png' },
         rare: { id: 'rare', name: 'Rare', score: 60, emoji: '🦑', blurb: 'Genuinely uncommon. Nice pull.', depth: 0.60, color: 'var(--tier-rare)', sprite: './assets/tiers/rare.png' },
         deepcut: { id: 'deepcut', name: 'Deep Cut', score: 85, emoji: '🏮', blurb: 'True obscurity. Few go this deep.', depth: 0.82, color: 'var(--tier-deepcut)', sprite: './assets/tiers/deepcut.png' },
-        krillion: { id: 'krillion', name: 'One in a Krillion', score: 100, emoji: '🌟', blurb: 'The designated gem. Trench floor.', depth: 0.97, color: 'var(--tier-krillion)', sprite: './assets/tiers/krillion-gold.png' },
+        krillion: { id: 'krillion', name: 'One in a Krillion', score: 100, emoji: '🌟', blurb: 'The designated gem. Trench floor.', depth: 0.97, color: 'var(--tier-krillion)', sprite: './assets/tiers/krillion.png' },
       };
 
+      const TIERS_BY_DEPTH = Object.values(TIERS).sort((a, b) => b.score - a.score);
+
       const SCORE_BANDS = [
-        { min: 0, tier: 'plankton', verdict: 'Plankton. Plenty of ocean left down there.' },
-        { min: 151, tier: 'schooler', verdict: 'Schooler. Swimming with the school.' },
-        { min: 251, tier: 'rare', verdict: 'Rare. Below the thermocline. Nice.' },
-        { min: 351, tier: 'deepcut', verdict: 'Deep cut. Seriously deep dive.' },
-        { min: 450, tier: 'krillion', verdict: 'One in a krillion. Trench dweller. Absurd.' },
+        { min: 0, range: '0–150', tier: 'plankton', verdict: 'Plankton. Plenty of ocean left down there.' },
+        { min: 151, range: '151–250', tier: 'schooler', verdict: 'Schooler. Swimming with the school.' },
+        { min: 251, range: '251–350', tier: 'rare', verdict: 'Rare. Below the thermocline. Nice.' },
+        { min: 351, range: '351–449', tier: 'deepcut', verdict: 'Deep cut. Seriously deep dive.' },
+        { min: 450, range: '450+', tier: 'krillion', verdict: 'One in a krillion. Trench dweller. Absurd.' },
       ];
 
       const BUDDIES = [
         { id: 'krill', name: 'The Krill', sprite: './assets/tiers/krillion.png', goldSprite: './assets/tiers/krillion-gold.png', color: '#ff5d8f', blub: 'blub!', poke: 'roll', unlockStreak: 0 },
-        { id: 'schooler', name: 'Schooler', sprite: './assets/tiers/schooler.png', goldSprite: './assets/tiers/schooler-gold.png', color: '#4de3ff', blub: 'glub!', poke: 'roll', unlockStreak: 2 },
-        { id: 'rare', name: 'Rare Squid', sprite: './assets/tiers/rare.png', goldSprite: './assets/tiers/rare-gold.png', color: '#ff5252', blub: 'blorp!', poke: 'celebrate', unlockStreak: 5 },
-        { id: 'deepcut', name: 'Deep Cut Angler', sprite: './assets/tiers/deepcut.png', goldSprite: './assets/tiers/deepcut-gold.png', color: '#9d7bff', blub: 'chomp!', poke: 'roll', unlockStreak: 10 },
-        { id: 'evil-krill', name: 'Evil Krill', sprite: './assets/tiers/evil-krill-white-v2.png', goldSprite: './assets/tiers/evil-krill-white-v2.png', color: '#ff303b', blub: 'mwahaha!', poke: 'roll', unlockStreak: 15 },
-        { id: 'hackmanite', name: 'Hackmanite', sprite: './assets/tiers/hackmanite-v2.png', goldSprite: './assets/tiers/hackmanite-v2.png', color: '#dfefee', blub: 'glimmer!', poke: 'celebrate', unlockStreak: 25 },
-        { id: 'fossil-krill', name: 'Fossil Krill', sprite: './assets/tiers/fossil-krill.png', goldSprite: './assets/tiers/fossil-krill.png', color: '#e8cfa4', blub: 'rattle!', poke: 'roll', unlockStreak: 35 },
-        { id: 'mantis-shrimp', name: 'Mantis Shrimp', sprite: './assets/tiers/tiger-mantis.png', goldSprite: './assets/tiers/tiger-mantis.png', color: '#ed9359', blub: 'pow!', poke: 'celebrate', unlockStreak: 50 },
-        { id: 'leviathan', name: 'Leviathan', sprite: './assets/tiers/leviathan.png', goldSprite: './assets/tiers/leviathan.png', color: '#3bf4c5', blub: 'roar!', poke: 'celebrate', unlockStreak: 75 },
+        { id: 'schooler', name: 'Schooler', sprite: './assets/tiers/schooler.png', goldSprite: './assets/tiers/schooler-gold.png', color: '#4de3ff', blub: 'glub!', poke: 'roll', unlockStreak: 5 },
+        { id: 'rare', name: 'Rare Squid', sprite: './assets/tiers/rare.png', goldSprite: './assets/tiers/rare-gold.png', color: '#ff5252', blub: 'blorp!', poke: 'celebrate', unlockStreak: 14 },
+        { id: 'deepcut', name: 'Deep Cut Angler', sprite: './assets/tiers/deepcut.png', goldSprite: './assets/tiers/deepcut-gold.png', color: '#9d7bff', blub: 'chomp!', poke: 'roll', unlockStreak: 30 },
+        { id: 'evil-krill', name: 'Evil Krill', sprite: './assets/tiers/evil-krill-white-v2.png', goldSprite: './assets/tiers/evil-krill-gold-v2.png', color: '#ff303b', blub: 'mwahaha!', poke: 'roll', unlockStreak: 45 },
+        { id: 'hackmanite', name: 'Hackmanite', sprite: './assets/tiers/hackmanite-v2.png', goldSprite: './assets/tiers/hackmanite-gold-v2.png', color: '#dfefee', blub: 'glimmer!', poke: 'celebrate', unlockStreak: 60 },
+        { id: 'fossil-krill', name: 'Fossil Krill', sprite: './assets/tiers/fossil-krill.png', goldSprite: './assets/tiers/fossil-krill-gold.png', color: '#e8cfa4', blub: 'rattle!', poke: 'roll', unlockStreak: 75 },
+        { id: 'mantis-shrimp', name: 'Mantis Shrimp', sprite: './assets/tiers/tiger-mantis.png', goldSprite: './assets/tiers/tiger-mantis-gold.png', color: '#ed9359', blub: 'pow!', poke: 'celebrate', unlockStreak: 100 },
+        { id: 'leviathan', name: 'Leviathan', sprite: './assets/tiers/leviathan.png', goldSprite: './assets/tiers/leviathan-gold.png', color: '#b4f542', blub: 'grrrblub!', poke: 'celebrate', unlockStreak: 150 },
       ];
 
       const AMBIENT_MARKERS = [
@@ -1719,18 +2063,30 @@
       function loadStore() {
         try {
           const d = JSON.parse(localStorage.getItem(STORE_KEY) || '{}');
+          const streak = Number(d.streak || 0);
           return {
-            streak: Number(d.streak || 0),
+            streak,
+            maxStreak: Math.max(streak, Number(d.maxStreak || 0)),
             lastDailyDate: d.lastDailyDate || null,
             dives: Number(d.dives || 0),
+            totalScore: Number(d.totalScore || 0),
+            unlimitedRuns: Number(d.unlimitedRuns || 0),
             bestScore: Number(d.bestScore || 0),
             history: d.history && typeof d.history === 'object' ? d.history : {},
+            completedDailies: d.completedDailies && typeof d.completedDailies === 'object' ? d.completedDailies : {},
             buddyId: d.buddyId || 'krill',
             colorblind: Boolean(d.colorblind),
-            reducedMotion: Boolean(d.reducedMotion),
+            lowPower: Boolean(d.lowPower ?? d.reducedMotion),
+            clearRejected: Boolean(d.clearRejected),
+            answerCorrections: d.answerCorrections !== false,
+            shareLink: Boolean(d.shareLink),
           };
         } catch {
-          return { streak: 0, lastDailyDate: null, dives: 0, bestScore: 0, history: {}, buddyId: 'krill', colorblind: false, reducedMotion: false };
+          return {
+            streak: 0, maxStreak: 0, lastDailyDate: null, dives: 0, totalScore: 0, unlimitedRuns: 0,
+            bestScore: 0, history: {}, completedDailies: {}, buddyId: 'krill',
+            colorblind: false, lowPower: false, clearRejected: false, answerCorrections: true, shareLink: false,
+          };
         }
       }
       function saveStore(st) {
@@ -1740,6 +2096,13 @@
       if (store.colorblind) document.documentElement.classList.add('colorblind');
 
       // === Helper utilities ===
+      function escHtml(str) {
+        return String(str ?? '')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;');
+      }
       function getKrillionDailyDateKey(offsetDays = 0) {
         // Real Krillion resets at 05:00:00Z daily
         const d = new Date(Date.now() - 5 * 3600000 - offsetDays * 86400000);
@@ -1747,6 +2110,14 @@
       }
       function getUtcDateKey(offsetDays = 0) {
         return getKrillionDailyDateKey(offsetDays);
+      }
+      function getNextResetMs(resetsAtIso) {
+        if (resetsAtIso) {
+          const parsed = Date.parse(resetsAtIso);
+          if (Number.isFinite(parsed) && parsed > Date.now() - 86400000) return parsed;
+        }
+        const curKey = getKrillionDailyDateKey(0);
+        return Date.parse(`${curKey}T05:00:00.000Z`) + 86400000;
       }
       function getDayNumber(dateStr) {
         const anchor = Date.UTC(2026, 10, 22); // Dive #130 anchor
@@ -1765,7 +2136,29 @@
         return copy;
       }
       function normalize(s) {
-        return s.toLowerCase().trim().replace(/[^a-z0-9\s'-]/g, '').replace(/\s+/g, ' ');
+        return String(s || '').toLowerCase().trim().replace(/[^a-z0-9\s'-]/g, '').replace(/\s+/g, ' ');
+      }
+      function editDistance1(a, b) {
+        if (a === b) return true;
+        if (Math.abs(a.length - b.length) > 1 || a.length < 4) return false;
+        let i = 0, j = 0, diffs = 0;
+        while (i < a.length && j < b.length) {
+          if (a[i] === b[j]) { i++; j++; continue; }
+          if (++diffs > 1) return false;
+          if (a.length > b.length) i++;
+          else if (b.length > a.length) j++;
+          else { i++; j++; }
+        }
+        return true;
+      }
+      function tierIconHtml(tierId, size = 18, glow = false) {
+        if (!tierId || tierId === 'miss' || !TIERS[tierId]) {
+          const flt = glow ? 'filter:drop-shadow(0 0 4px var(--tier-miss));' : '';
+          return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="var(--tier-miss)" stroke-width="1.8" stroke-linecap="round" style="flex-shrink:0;${flt}" aria-hidden="true"><circle cx="12" cy="12" r="7.5" stroke-dasharray="2.8 4"></circle></svg>`;
+        }
+        const t = TIERS[tierId];
+        const flt = glow ? `filter:drop-shadow(0 0 ${Math.max(4, size / 4)}px ${t.color});` : '';
+        return `<img src="${t.sprite}" alt="" width="${size}" height="${size}" style="width:${size}px;height:${size}px;image-rendering:pixelated;flex-shrink:0;${flt}" aria-hidden="true" draggable="false"/>`;
       }
 
       const DAILY_CACHE_KEY = 'krillionDailyCacheV1';
@@ -1777,9 +2170,13 @@
         return {
           date: typeof data.date === 'string' ? data.date : getKrillionDailyDateKey(),
           dayNumber: typeof data.dayNumber === 'number' ? data.dayNumber : getDayNumber(getKrillionDailyDateKey()),
+          resetsAt: data.resetsAt || null,
           prompts: data.prompts.map((p, idx) => ({
             id: p.id || `p${idx + 1}`,
             q: String(p.text || p.q || '').trim(),
+            totalAnswers: p.totalAnswers || null,
+            resultsNote: p.resultsNote || null,
+            answers: Array.isArray(p.answers) ? p.answers : null,
           })).filter((p) => p.q),
         };
       }
@@ -1795,7 +2192,7 @@
         if (!normalized) return false;
         liveDailyData = normalized;
         try { localStorage.setItem(DAILY_CACHE_KEY, JSON.stringify(payload)); } catch {}
-        if (typeof setupMode === 'function' && session && session.mode === 'daily' && el.root.dataset.phase === 'intro') {
+        if (typeof setupMode === 'function' && session && session.mode === 'daily' && (el.root.dataset.phase === 'intro' || el.root.dataset.phase === 'done')) {
           setupMode({ mode: 'daily' });
         }
         return true;
@@ -1840,6 +2237,29 @@
         }
       }
 
+      function buildPromptAnswerSheet(promptObj, fallbackTier = null, playerAns = null) {
+        if (Array.isArray(promptObj?.answers) && promptObj.answers.length > 0) {
+          const list = promptObj.answers.slice();
+          if (playerAns && !list.some((x) => normalize(x.answer) === normalize(playerAns))) {
+            const tObj = TIERS[fallbackTier] || TIERS.schooler;
+            list.unshift({ answer: playerAns, tier: tObj.id, score: tObj.score });
+          }
+          return list;
+        }
+        const list = [];
+        ['krillion', 'deepcut', 'rare', 'schooler', 'tooclever', 'plankton'].forEach((tid) => {
+          const items = promptObj?.[tid];
+          if (Array.isArray(items)) {
+            items.forEach((ans) => list.push({ answer: ans, tier: tid, score: TIERS[tid].score }));
+          }
+        });
+        if (playerAns && !list.some((x) => normalize(x.answer) === normalize(playerAns))) {
+          const tObj = TIERS[fallbackTier] || TIERS.schooler;
+          list.unshift({ answer: playerAns, tier: tObj.id, score: tObj.score });
+        }
+        return list;
+      }
+
       function evaluateAnswer(prompt, raw, usedSet) {
         const clean = normalize(raw);
         if (!clean || clean.length < 2) return { ok: false, reason: 'type something real.' };
@@ -1849,15 +2269,39 @@
         const pWords = normalize(promptCore).split(' ').filter((w) => w.length > 3 && !['name', 'that', 'with', 'from', 'have', 'least', 'part', 'uses', 'long'].includes(w));
         if (pWords.includes(clean)) return { ok: false, reason: 'cannot echo a word from the prompt.' };
 
-        const hit = (list) => Array.isArray(list) && list.some((w) => clean === w || clean.includes(w));
-        if (hit(prompt.plankton)) return { ok: true, tier: 'plankton', clean, note: '41% of divers picked this' };
-        if (hit(prompt.tooclever)) return { ok: true, tier: 'tooclever', clean, note: '24% tried being clever with this' };
-        if (hit(prompt.schooler)) return { ok: true, tier: 'schooler', clean, note: '11% of divers matched this' };
-        if (hit(prompt.rare)) return { ok: true, tier: 'rare', clean, note: '3.2% of divers pulled this' };
-        if (hit(prompt.deepcut)) return { ok: true, tier: 'deepcut', clean, note: '0.6% of divers reached this' };
-        if (hit(prompt.krillion)) return { ok: true, tier: 'krillion', clean, note: '0.04% — trench gem!' };
+        // 1. Check real official synced answer sheet first (exact, alias, then 1-char correction)
+        if (Array.isArray(prompt.answers) && prompt.answers.length > 0) {
+          for (const item of prompt.answers) {
+            const normMain = normalize(item.answer);
+            if (normMain === clean) {
+              return { ok: true, tier: item.tier, clean, canonical: item.answer, note: item.quip || TIERS[item.tier]?.blurb || '' };
+            }
+            if (Array.isArray(item.aliases)) {
+              for (const al of item.aliases) {
+                if (normalize(al) === clean) {
+                  return { ok: true, tier: item.tier, clean, canonical: item.answer, correctedFrom: raw.trim(), note: item.quip || TIERS[item.tier]?.blurb || '' };
+                }
+              }
+            }
+          }
+          for (const item of prompt.answers) {
+            const normMain = normalize(item.answer);
+            if (editDistance1(clean, normMain)) {
+              return { ok: true, tier: item.tier, clean, canonical: item.answer, correctedFrom: raw.trim(), note: item.quip || TIERS[item.tier]?.blurb || '' };
+            }
+          }
+        }
 
-        // Smart tier placement for live daily & creative answers
+        // 2. Check built-in curated tier keyword lists
+        const hit = (list) => Array.isArray(list) && list.some((w) => clean === w || clean.includes(w));
+        if (hit(prompt.plankton)) return { ok: true, tier: 'plankton', clean, note: TIERS.plankton.blurb };
+        if (hit(prompt.tooclever)) return { ok: true, tier: 'tooclever', clean, note: TIERS.tooclever.blurb };
+        if (hit(prompt.schooler)) return { ok: true, tier: 'schooler', clean, note: TIERS.schooler.blurb };
+        if (hit(prompt.rare)) return { ok: true, tier: 'rare', clean, note: TIERS.rare.blurb };
+        if (hit(prompt.deepcut)) return { ok: true, tier: 'deepcut', clean, note: TIERS.deepcut.blurb };
+        if (hit(prompt.krillion)) return { ok: true, tier: 'krillion', clean, note: TIERS.krillion.blurb };
+
+        // 3. Deterministic novelty scoring for creative open-vocabulary answers
         const len = clean.length;
         const hash = Array.from(clean).reduce((acc, c) => (acc * 33 + c.charCodeAt(0)) % 100, 0);
         if (len >= 13 || hash < 14) return { ok: true, tier: 'deepcut', clean, note: '0.8% — deep pull' };
@@ -1888,6 +2332,8 @@
         mascotImg: document.getElementById('ds-mascot-img'),
         blub: document.getElementById('ds-blub'),
         muteBtn: document.getElementById('ds-mute'),
+        settingsTrig: document.getElementById('ds-settings-trig'),
+        wardrobeTrig: document.getElementById('ds-wardrobe-trig'),
         introOverlay: document.getElementById('intro-overlay'),
         beginBtn: document.getElementById('begin-btn'),
         introMetaLabel: document.getElementById('intro-meta-label'),
@@ -1897,6 +2343,7 @@
         timeDigits: document.getElementById('time-digits'),
         input: document.getElementById('ds-input'),
         fuseFill: document.getElementById('ds-fuse-fill'),
+        correctionPill: document.getElementById('ds-correction-pill'),
         reject: document.getElementById('ds-reject'),
         nextWrap: document.getElementById('next-wrap'),
         nextBtn: document.getElementById('next-btn'),
@@ -1904,13 +2351,19 @@
         doneDiveLabel: document.getElementById('done-dive-label'),
         doneScoreBig: document.getElementById('done-score-big'),
         doneDepthSub: document.getElementById('done-depth-sub'),
-        doneVerdict: document.getElementById('done-verdict'),
-        doneEmojiBar: document.getElementById('done-emoji-bar'),
+        doneDistWrap: document.getElementById('done-dist-wrap'),
+        doneDivebar: document.getElementById('done-divebar'),
+        doneBearing: document.getElementById('done-bearing'),
         doneBreakdown: document.getElementById('done-breakdown'),
+        doneLogbook: document.getElementById('done-logbook'),
+        doneCountdownWrap: document.getElementById('done-countdown-wrap'),
         copyResultsBtn: document.getElementById('copy-results-btn'),
+        nativeShareBtn: document.getElementById('native-share-btn'),
         playUnlimitedBtn: document.getElementById('play-unlimited-btn'),
+        doneArchiveBtn: document.getElementById('done-archive-btn'),
+        donePacksBtn: document.getElementById('done-packs-btn'),
         backSurfaceBtn: document.getElementById('back-surface-btn'),
-        copyToast: document.getElementById('copy-toast'),
+        kModal: document.getElementById('k-modal'),
         menuTrigger: document.getElementById('menu-trigger'),
         siteMenu: document.getElementById('site-menu'),
         menuClose: document.getElementById('menu-close'),
@@ -1969,6 +2422,8 @@
       let tierLineEls = [];
       let particles = [];
       let sparkles = [];
+      let doneCountdownTimer = null;
+      let partyTimer = null;
       let fish = Array.from({ length: 4 }, () => ({
         x: Math.random() * (window.innerWidth || 420),
         dOff: (Math.random() - 0.5) * 320,
@@ -2002,7 +2457,8 @@
 
       function spawnBurst(x, y, color, count = 18) {
         const d = viewDepth + (y - window.innerHeight / 2) / 2;
-        for (let i = 0; i < count; i++) {
+        const limit = store.lowPower ? Math.ceil(count * 0.4) : count;
+        for (let i = 0; i < limit; i++) {
           const ang = Math.random() * Math.PI * 2;
           const spd = 28 + Math.random() * 110;
           sparkles.push({ x, d, vx: Math.cos(ang) * spd, vd: Math.sin(ang) * spd * 0.5, r: 1.6 + Math.random() * 2.4, life: 0.7 + Math.random() * 0.6, t: 0, color });
@@ -2025,7 +2481,7 @@
         audio.play('blub');
         el.mascotImg.classList.remove('roll', 'celebrate');
         void el.mascotImg.offsetWidth;
-        el.mascotImg.classList.add(b.poke || 'roll');
+        el.mascotImg.classList.add(b.poke === 'celebrate' ? 'celebrate' : 'roll');
         el.blub.classList.remove('show');
         void el.blub.offsetWidth;
         el.blub.classList.add('show');
@@ -2065,7 +2521,7 @@
         }
 
         camDepth += (targetDepth - camDepth) * (1 - Math.exp(-6 * dt));
-        viewDepth = camDepth + (store.reducedMotion ? 0 : 2.2 * Math.sin(now * 0.0006));
+        viewDepth = camDepth + (store.lowPower ? 0 : 2.2 * Math.sin(now * 0.0006));
         el.world.style.transform = `translate3d(0,${h / 2 - 2 * viewDepth}px,0)`;
         el.hudDepth.textContent = `${Math.max(0, Math.round(viewDepth)).toLocaleString()}m`;
         el.vignette.style.opacity = Math.min(0.72, 0.25 + Math.max(0, viewDepth) / 2400).toFixed(3);
@@ -2126,7 +2582,8 @@
 
         // Foreground marine snow, ambient fish & confetti bursts
         foreCtx.clearRect(0, 0, w, h);
-        if (Math.random() < 0.25 && particles.length < 48) {
+        const maxSnow = store.lowPower ? 18 : 48;
+        if (Math.random() < 0.25 && particles.length < maxSnow) {
           particles.push({ x: Math.random() * w, d: viewDepth + (Math.random() - 0.3) * 280, r: 1 + Math.random() * 1.8, alpha: 0.16 + Math.random() * 0.22 });
         }
         particles.forEach((p, idx) => {
@@ -2180,12 +2637,108 @@
       }
       requestAnimationFrame(tickCanvas);
 
+      // === Quick Modals (Settings & Wardrobe matching krillion.io) ===
+      function closeModal() {
+        el.kModal.classList.add('hidden');
+        el.kModal.innerHTML = '';
+      }
+      el.kModal.addEventListener('click', (e) => {
+        if (e.target === el.kModal) closeModal();
+      });
+
+      function openSettingsModal() {
+        el.kModal.innerHTML = `
+          <div class="k-modal-dialog" role="dialog" aria-modal="true" aria-label="Settings">
+            <button id="km-close" type="button" class="k-modal-close" aria-label="Close">×</button>
+            <p class="sm-eyebrow">PREFERENCES</p>
+            <h2 style="font-size:34px;line-height:1;margin-bottom:14px">Settings</h2>
+            <div class="hub-panel" style="padding:12px">
+              <div class="round-row">
+                <div><div style="font-size:19px">Sound effects</div><div style="font-size:14px;color:var(--color-drift)">Underwater synth chimes & radar ticks</div></div>
+                <button id="km-sound" class="btn-quiet" type="button">${audio.muted ? 'OFF' : 'ON'}</button>
+              </div>
+              <div class="round-row">
+                <div><div style="font-size:19px">Colorblind mode</div><div style="font-size:14px;color:var(--color-drift)">High-contrast tier & prompt colors</div></div>
+                <button id="km-cb" class="btn-quiet" type="button">${store.colorblind ? 'ON' : 'OFF'}</button>
+              </div>
+              <div class="round-row">
+                <div><div style="font-size:19px">Low power mode</div><div style="font-size:14px;color:var(--color-drift)">Fewer particles & calmer camera</div></div>
+                <button id="km-lp" class="btn-quiet" type="button">${store.lowPower ? 'ON' : 'OFF'}</button>
+              </div>
+              <div class="round-row">
+                <div><div style="font-size:19px">Clear rejected entry</div><div style="font-size:14px;color:var(--color-drift)">Wipe input box when an answer is rejected</div></div>
+                <button id="km-clear" class="btn-quiet" type="button">${store.clearRejected ? 'ON' : 'OFF'}</button>
+              </div>
+              <div class="round-row">
+                <div><div style="font-size:19px">Answer corrections</div><div style="font-size:14px;color:var(--color-drift)">Show typo corrections made above dock</div></div>
+                <button id="km-corr" class="btn-quiet" type="button">${store.answerCorrections ? 'ON' : 'OFF'}</button>
+              </div>
+              <div class="round-row">
+                <div><div style="font-size:19px">Include link when sharing</div><div style="font-size:14px;color:var(--color-drift)">Append krillion.io link to copied results</div></div>
+                <button id="km-link" class="btn-quiet" type="button">${store.shareLink ? 'ON' : 'OFF'}</button>
+              </div>
+            </div>
+          </div>
+        `;
+        el.kModal.classList.remove('hidden');
+        document.getElementById('km-close').onclick = closeModal;
+        document.getElementById('km-sound').onclick = () => { audio.toggleMute(); updateMuteButton(); openSettingsModal(); };
+        document.getElementById('km-cb').onclick = () => {
+          store.colorblind = !store.colorblind;
+          document.documentElement.classList.toggle('colorblind', store.colorblind);
+          saveStore(store);
+          openSettingsModal();
+        };
+        document.getElementById('km-lp').onclick = () => { store.lowPower = !store.lowPower; saveStore(store); openSettingsModal(); };
+        document.getElementById('km-clear').onclick = () => { store.clearRejected = !store.clearRejected; saveStore(store); openSettingsModal(); };
+        document.getElementById('km-corr').onclick = () => { store.answerCorrections = !store.answerCorrections; saveStore(store); openSettingsModal(); };
+        document.getElementById('km-link').onclick = () => { store.shareLink = !store.shareLink; saveStore(store); openSettingsModal(); };
+      }
+
+      function openWardrobeModal() {
+        const bestStreak = Math.max(store.maxStreak, store.streak);
+        el.kModal.innerHTML = `
+          <div class="k-modal-dialog" role="dialog" aria-modal="true" aria-label="Wardrobe">
+            <button id="kw-close" type="button" class="k-modal-close" aria-label="Close wardrobe">×</button>
+            <p class="sm-eyebrow">WARDROBE</p>
+            <h2 style="font-size:34px;line-height:1">Dive buddy</h2>
+            <p style="font-size:15px;color:var(--color-drift);margin-top:4px">Unlock companions by extending your daily streak.</p>
+            <div class="k-wardrobe-grid" role="group" aria-label="Dive buddy">
+              ${BUDDIES.map((b) => {
+                const earned = b.unlockStreak === 0 || bestStreak >= b.unlockStreak;
+                return `
+                  <button type="button" class="k-wardrobe-key${earned ? '' : ' locked'}" data-wbuddy="${b.id}" ${earned ? '' : 'disabled'} aria-pressed="${store.buddyId === b.id}">
+                    <img src="${b.sprite}" width="44" height="44" style="image-rendering:pixelated" alt="${escHtml(b.name)}"/>
+                    <span class="k-wardrobe-name">${escHtml(b.name)}</span>
+                    <span class="k-wardrobe-req">${earned ? (store.buddyId === b.id ? 'Active' : 'Ready') : `${b.unlockStreak}-day streak`}</span>
+                  </button>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        `;
+        el.kModal.classList.remove('hidden');
+        document.getElementById('kw-close').onclick = closeModal;
+        el.kModal.querySelectorAll('[data-wbuddy]').forEach((btn) => {
+          btn.onclick = () => {
+            store.buddyId = btn.dataset.wbuddy;
+            saveStore(store);
+            applyBuddySprite(false);
+            openWardrobeModal();
+          };
+        });
+      }
+
+      el.settingsTrig.addEventListener('click', openSettingsModal);
+      el.wardrobeTrig.addEventListener('click', openWardrobeModal);
+
       // === Game Session State Machine ===
       let session = {
-        mode: 'daily', // daily | unlimited | archive | pack | party
+        mode: 'daily', // daily | unlimited | archive | pack
         packId: 'classic',
+        dateStr: getKrillionDailyDateKey(),
         label: '',
-        dayNum: getDayNumber(getUtcDateKey()),
+        dayNum: getDayNumber(getKrillionDailyDateKey()),
         prompts: [],
         roundIdx: 0,
         score: 0,
@@ -2215,17 +2768,20 @@
         el.hudCount.textContent = el.root.dataset.phase === 'intro' ? 'SURFACE' : `ROUND ${session.roundIdx + 1} / ${session.prompts.length}`;
       }
 
-      function setupMode({ mode = 'daily', packId = 'classic', dateStr = getUtcDateKey() } = {}) {
+      function setupMode({ mode = 'daily', packId = 'classic', dateStr = getKrillionDailyDateKey() } = {}) {
         clearInterval(session.timerId);
+        clearInterval(doneCountdownTimer);
         clearRoundWorldEls();
         session.mode = mode;
         session.packId = packId;
+        session.dateStr = dateStr;
         session.roundIdx = 0;
         session.score = 0;
         session.results = [];
         session.usedAnswers = new Set();
         session.submitting = false;
         applyBuddySprite(false);
+        el.correctionPill.classList.add('hidden');
 
         const pack = PACKS[packId];
         el.root.dataset.world = pack?.world || 'ocean';
@@ -2236,14 +2792,9 @@
           session.label = pack.title;
         } else if (mode === 'unlimited') {
           el.tagline.textContent = 'UNLIMITED DIVE';
-          el.subline.textContent = '7 random prompts · endless depth runs';
+          el.subline.textContent = '7 prompts · 25 seconds each · endless runs';
           session.prompts = seededShuffle(CLASSIC_PROMPTS, `unl-${Date.now()}-${Math.random()}`).slice(0, 7);
-          session.label = 'Unlimited Classic';
-        } else if (mode === 'party') {
-          el.tagline.textContent = 'PUFFER PARTY';
-          el.subline.textContent = 'Local party round · out-dive the puffer AI bots!';
-          session.prompts = seededShuffle(CLASSIC_PROMPTS, `party-${Date.now()}`).slice(0, 7);
-          session.label = 'Puffer Party';
+          session.label = `Unlimited #${store.unlimitedRuns + 1}`;
         } else {
           // Daily or Archive
           const dn = getDayNumber(dateStr);
@@ -2252,6 +2803,7 @@
           el.subline.textContent = '7 prompts · 25 seconds each · rarer answers sink deeper';
           if (mode === 'daily' && liveDailyData && liveDailyData.prompts.length > 0) {
             session.dayNum = liveDailyData.dayNumber;
+            session.dateStr = liveDailyData.date;
             session.prompts = liveDailyData.prompts;
             session.label = `Dive #${liveDailyData.dayNumber}`;
           } else if (dateStr === '2026-11-22') {
@@ -2260,6 +2812,16 @@
           } else {
             session.prompts = seededShuffle(CLASSIC_PROMPTS, `krillion-daily-${dateStr}`).slice(0, 7);
             session.label = `Dive #${dn}`;
+          }
+
+          // If today's daily was already completed in this browser, show the completed ending screen (matching krillion.io)
+          if (mode === 'daily' && store.completedDailies[session.dateStr]) {
+            const saved = store.completedDailies[session.dateStr];
+            session.score = saved.score;
+            session.dayNum = saved.dayNumber || session.dayNum;
+            session.results = saved.results || [];
+            renderDoneScreenView(saved);
+            return;
           }
         }
 
@@ -2285,8 +2847,10 @@
         el.root.dataset.phase = 'preview';
         el.menuTrigger.dataset.diving = 'true';
         el.introOverlay.classList.add('hidden');
+        el.doneOverlay.classList.add('hidden');
         el.nextWrap.classList.add('hidden');
         el.reject.classList.add('hidden');
+        el.correctionPill.classList.add('hidden');
         el.dock.classList.remove('hot');
         el.edge.classList.remove('danger');
 
@@ -2373,13 +2937,18 @@
           el.reject.classList.remove('hidden', 'ds-reject-shake');
           void el.reject.offsetWidth;
           el.reject.classList.add('ds-reject-shake');
+          if (store.clearRejected) el.input.value = '';
           return;
         }
         session.submitting = true;
         session.usedAnswers.add(verdict.clean);
+        if (verdict.canonical && store.answerCorrections && normalize(verdict.canonical) !== normalize(el.input.value)) {
+          el.correctionPill.innerHTML = `“${escHtml(el.input.value.trim())}” → <b>${escHtml(verdict.canonical)}</b>`;
+          el.correctionPill.classList.remove('hidden');
+        }
         clearInterval(session.timerId);
         audio.play('submit');
-        landRound(el.input.value.trim(), verdict);
+        landRound(verdict.canonical || el.input.value.trim(), verdict);
       });
 
       function landRound(rawText, verdict) {
@@ -2402,7 +2971,7 @@
 
         audio.play('sink');
         const startD = viewDepth;
-        const dur = verdict?.tier === 'krillion' ? 2400 : verdict?.tier === 'deepcut' ? 2100 : 1500;
+        const dur = store.lowPower ? 700 : (verdict?.tier === 'krillion' ? 2400 : verdict?.tier === 'deepcut' ? 2100 : 1500);
         const passed = new Set();
 
         addTween(dur, easeInOutCubic, (t) => {
@@ -2442,9 +3011,11 @@
           void el.hudScore.offsetWidth;
           el.hudScore.classList.add('slam');
 
+          const curPrompt = session.prompts[session.roundIdx];
           session.results.push({
-            prompt: session.prompts[session.roundIdx].q,
-            answer: rawText || '—',
+            promptId: curPrompt.id || `p${session.roundIdx + 1}`,
+            prompt: curPrompt.q,
+            answer: rawText || null,
             tier: tierObj ? tierObj.id : 'miss',
             emoji: tierObj ? tierObj.emoji : '⬛',
             name: tierObj ? tierObj.name : 'Miss',
@@ -2459,55 +3030,305 @@
           landed.innerHTML =
             (tierObj ? `<img class="icon" src="${tierObj.sprite}" alt=""/>` : '') +
             `<div class="tname">${tierObj ? tierObj.name.toUpperCase() : 'NOTHING LANDED'}</div>` +
-            `<div class="tans">${rawText ? `“${rawText}”` : '—'}</div>` +
+            `<div class="tans">${rawText ? `“${escHtml(rawText)}”` : '—'}</div>` +
             `<div class="tpts"><b>+${points} PTS</b>${points > 0 ? ` · sink ${(points * 10).toLocaleString()}m` : ''}</div>` +
-            `<div class="tsub">${verdict ? verdict.note : 'out of time'}</div>`;
+            `<div class="tsub">${escHtml(verdict ? verdict.note : 'out of time')}</div>`;
           el.world.appendChild(landed);
 
           renderHud();
-          el.nextBtn.textContent = session.roundIdx >= session.prompts.length - 1 ? 'SEE RESULTS →' : 'NEXT PROMPT →';
+          el.nextBtn.textContent = session.roundIdx >= session.prompts.length - 1 ? 'SURFACE ▲' : 'DESCEND ▼';
           el.nextWrap.classList.remove('hidden');
         });
       }
 
-      function showDoneScreen() {
+      // === Exact Krillion Ending Screen Components ===
+      function computeScorePercentile(score) {
+        // Synthetic ocean bell curve peaking near 225 pts (0..700) matching krillion.io distribution feel
+        const dist = [];
+        for (let b = 0; b < 28; b++) {
+          const x = (b + 0.5) * 25;
+          const v = Math.exp(-Math.pow((x - 220) / 115, 2)) + 0.25 * Math.exp(-Math.pow((x - 360) / 130, 2));
+          dist.push(v);
+        }
+        const mean = 235, sd = 105;
+        const z = (score - mean) / (sd * Math.SQRT2);
+        const erf = (t) => {
+          const s = t >= 0 ? 1 : -1;
+          const a = Math.abs(t);
+          const x = 1 / (1 + 0.3275911 * a);
+          const y = 1 - (((((1.061405429 * x - 1.453152027) * x) + 1.421413741) * x - 0.284496736) * x + 0.254829592) * x * Math.exp(-a * a);
+          return s * y;
+        };
+        const pct = Math.min(99.9, Math.max(1, Math.round((0.5 * (1 + erf(z))) * 1000) / 10));
+        return { dist, betterThan: pct };
+      }
+
+      function renderDistributionCurve(score) {
+        const { dist, betterThan } = computeScorePercentile(score);
+        const maxV = Math.max(...dist);
+        const pts = [[0, 78]];
+        dist.forEach((v, idx) => pts.push([((idx + 0.5) / dist.length) * 320, 78 - (v / maxV) * 66]));
+        pts.push([320, 78]);
+        let dPath = `M ${pts[0][0]} ${pts[0][1]}`;
+        for (let i = 0; i < pts.length - 1; i++) {
+          const p0 = pts[Math.max(0, i - 1)];
+          const p1 = pts[i];
+          const p2 = pts[i + 1];
+          const p3 = pts[Math.min(pts.length - 1, i + 2)];
+          dPath += ` C ${p1[0] + (p2[0] - p0[0]) / 6} ${p1[1] + (p2[1] - p0[1]) / 6}, ${p2[0] - (p3[0] - p1[0]) / 6} ${p2[1] - (p3[1] - p1[1]) / 6}, ${p2[0]} ${p2[1]}`;
+        }
+        const areaPath = `${dPath} L 320 78 L 0 78 Z`;
+        const mx = Math.min(320, Math.max(0, (Math.min(score, 700) / 700) * 320));
+        let my = 78;
+        for (let i = 0; i < pts.length - 1; i++) {
+          const [x1, y1] = pts[i], [x2, y2] = pts[i + 1];
+          if (mx >= x1 && mx <= x2) {
+            my = y1 + (y2 - y1) * (x2 === x1 ? 0 : (mx - x1) / (x2 - x1));
+            break;
+          }
+        }
+        const fmtPct = betterThan >= 99.5 ? betterThan.toFixed(2) : String(Math.round(betterThan));
+        el.doneDistWrap.innerHTML = `
+          <svg viewBox="0 0 320 96" style="width:100%;height:auto;display:block" role="img" aria-label="Score distribution">
+            <defs>
+              <linearGradient id="pc-fill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="var(--color-lumen-cyan)" stop-opacity="0.48"></stop>
+                <stop offset="100%" stop-color="var(--color-lumen-cyan)" stop-opacity="0.03"></stop>
+              </linearGradient>
+              <clipPath id="pc-beaten"><rect x="0" y="0" width="${mx}" height="96"></rect></clipPath>
+            </defs>
+            <path d="${areaPath}" fill="url(#pc-fill)" opacity="0.28"></path>
+            <path d="${areaPath}" fill="url(#pc-fill)" clip-path="url(#pc-beaten)"></path>
+            <path d="${dPath}" fill="none" stroke="var(--color-drift)" stroke-width="1.4" opacity="0.55"></path>
+            <line x1="${mx}" y1="${my}" x2="${mx}" y2="78" stroke="var(--color-lumen-cyan)" stroke-width="1.5" stroke-dasharray="2 2"></line>
+            <circle cx="${mx}" cy="${my}" r="4.5" fill="var(--color-lumen-pink)" stroke="#050a14" stroke-width="1.5"></circle>
+            <line x1="0" y1="78" x2="320" y2="78" stroke="var(--hairline)" stroke-width="1"></line>
+            <text x="2" y="92" fill="var(--color-drift)" opacity="0.65" font-size="11">0</text>
+            <text x="150" y="92" fill="var(--color-drift)" opacity="0.65" font-size="11">350</text>
+            <text x="298" y="92" fill="var(--color-drift)" opacity="0.65" font-size="11">700</text>
+          </svg>
+          <p style="font-size:16px;letter-spacing:0.14em;text-transform:uppercase;color:var(--color-lumen-cyan);margin-top:4px">better than ${fmtPct}% of today's players</p>
+        `;
+      }
+
+      function renderDiveBarChart(results) {
+        const gridTicks = [0, 0.25, 0.5, 0.75, 1];
+        const gridsHtml = gridTicks.map((t) => `
+          <div class="divebar-gridline" style="top:${t * 100}%;opacity:${t === 0 ? 1 : 0.5}"></div>
+          <span class="divebar-gridlabel" style="top:${t * 100}%">${t === 0 ? '0m' : '-' + (1000 * t)}</span>
+        `).join('');
+
+        const colsHtml = results.map((r, idx) => {
+          const tObj = TIERS[r.tier] || null;
+          const depthFrac = tObj ? tObj.depth : 0.03;
+          const colColor = tObj ? tObj.color : 'var(--tier-miss)';
+          return `
+            <div class="divebar-col">
+              <div class="divebar-line" style="height:calc(${depthFrac * 100}% - 8px);background:linear-gradient(180deg, transparent, ${colColor})"></div>
+              <div class="divebar-node" style="top:${depthFrac * 100}%;animation-delay:${idx * 90}ms" title="Round ${idx + 1}: ${escHtml(r.answer || 'miss')}, ${r.score} pts">
+                ${tierIconHtml(r.tier, 19, Boolean(tObj))}
+              </div>
+              <span class="divebar-num">${idx + 1}</span>
+            </div>
+          `;
+        }).join('');
+
+        el.doneDivebar.innerHTML = `${gridsHtml}<div class="divebar-cols">${colsHtml}</div>`;
+      }
+
+      function renderBearingBands(score) {
+        const activeBand = [...SCORE_BANDS].reverse().find((b) => score >= b.min) || SCORE_BANDS[0];
+        el.doneBearing.innerHTML = SCORE_BANDS.map((b) => {
+          const isMatch = b === activeBand;
+          return `
+            <li class="bearing-row">
+              ${tierIconHtml(b.tier, 17)}
+              <span class="bearing-range" style="color:${TIERS[b.tier].color}">${b.range}</span>
+              <span class="bearing-verdict" style="color:${isMatch ? 'var(--color-foam)' : 'rgba(125,147,184,0.68)'}">${escHtml(b.verdict)}</span>
+            </li>
+          `;
+        }).join('');
+      }
+
+      function renderCatchAccordion(results, promptsSource) {
+        el.doneBreakdown.innerHTML = '';
+        results.forEach((r, idx) => {
+          const li = document.createElement('li');
+          li.className = 'catch-item';
+          const tierColor = TIERS[r.tier] ? TIERS[r.tier].color : 'var(--tier-miss)';
+          const promptObj = promptsSource?.[idx] || liveDailyData?.prompts?.find((p) => p.id === r.promptId || p.q === r.prompt) || {};
+          const answers = buildPromptAnswerSheet(promptObj, r.tier, r.answer);
+
+          li.innerHTML = `
+            <button type="button" class="catch-trigger" aria-expanded="false">
+              <span style="width:14px;font-size:14px;color:rgba(125,147,184,0.65);flex-shrink:0">${idx + 1}</span>
+              ${tierIconHtml(r.tier, 19)}
+              <div style="min-width:0;flex:1">
+                <p style="font-size:14px;color:rgba(125,147,184,0.75);letter-spacing:0.05em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(r.prompt)}</p>
+                <p style="font-size:20px;color:var(--color-foam);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(r.answer || '—')}</p>
+              </div>
+              <span style="font-size:18px;color:${tierColor};font-variant-numeric:tabular-nums">${r.score}</span>
+              <span class="catch-pm" style="font-size:16px;color:rgba(125,147,184,0.6);width:14px;text-align:center">+</span>
+            </button>
+            <div class="catch-sheet hidden"></div>
+          `;
+
+          const trig = li.querySelector('.catch-trigger');
+          const pm = li.querySelector('.catch-pm');
+          const sheetEl = li.querySelector('.catch-sheet');
+          let open = false;
+          let activeTierFilter = 'all';
+          let searchVal = '';
+
+          function renderSheetBody() {
+            const tierCounts = {};
+            answers.forEach((a) => { tierCounts[a.tier] = (tierCounts[a.tier] || 0) + 1; });
+            const pills = [{ id: 'all', name: 'All', color: 'var(--color-foam)', count: answers.length }]
+              .concat(TIERS_BY_DEPTH.filter((t) => tierCounts[t.id]).map((t) => ({ id: t.id, name: t.id === 'krillion' ? 'Krillion' : t.name, color: t.color, count: tierCounts[t.id] })));
+            const qLow = searchVal.trim().toLowerCase();
+            const filtered = answers.filter((a) => (activeTierFilter === 'all' || a.tier === activeTierFilter) && (!qLow || a.answer.toLowerCase().includes(qLow)));
+            const pNorm = normalize(r.answer);
+
+            sheetEl.innerHTML = `
+              <div class="catch-filters">
+                ${pills.map((pl) => `<button type="button" class="catch-pill" data-tf="${pl.id}" aria-pressed="${activeTierFilter === pl.id}" style="color:${pl.color};border-color:${activeTierFilter === pl.id ? pl.color : 'var(--hairline)'}">${escHtml(pl.name)} <span style="opacity:0.7">${pl.count}</span></button>`).join('')}
+              </div>
+              ${answers.length > 18 ? `<input type="search" class="catch-search" placeholder="Search answers…" value="${escHtml(searchVal)}" />` : ''}
+              <ul class="catch-list">
+                ${filtered.slice(0, 120).map((a) => {
+                  const isMine = pNorm && normalize(a.answer) === pNorm;
+                  const tc = TIERS[a.tier]?.color || 'var(--color-drift)';
+                  return `
+                    <li class="catch-ans-row${isMine ? ' mine' : ''}">
+                      <span style="margin-top:2px">${tierIconHtml(a.tier, 14)}</span>
+                      <span style="flex:1;min-width:0">
+                        <span style="color:var(--color-foam)">${escHtml(a.answer)}</span>
+                        ${isMine ? '<span style="margin-left:6px;font-size:13px;letter-spacing:0.12em;text-transform:uppercase;color:var(--color-lumen-cyan)">you</span>' : ''}
+                        ${a.quip ? `<span style="display:block;font-size:14px;color:rgba(125,147,184,0.75)">${escHtml(a.quip)}</span>` : ''}
+                      </span>
+                      <span style="font-size:14px;color:${tc};font-variant-numeric:tabular-nums">+${a.score}</span>
+                    </li>
+                  `;
+                }).join('') || '<li style="color:var(--color-drift);font-size:15px;padding:4px">No matching answers</li>'}
+              </ul>
+            `;
+
+            sheetEl.querySelectorAll('[data-tf]').forEach((btn) => {
+              btn.onclick = () => { activeTierFilter = btn.dataset.tf; renderSheetBody(); };
+            });
+            const srch = sheetEl.querySelector('.catch-search');
+            if (srch) {
+              srch.oninput = (ev) => {
+                searchVal = ev.target.value;
+                renderSheetBody();
+                const again = sheetEl.querySelector('.catch-search');
+                if (again) { again.focus(); again.setSelectionRange(searchVal.length, searchVal.length); }
+              };
+            }
+          }
+
+          trig.onclick = () => {
+            open = !open;
+            trig.setAttribute('aria-expanded', String(open));
+            pm.textContent = open ? '−' : '+';
+            sheetEl.classList.toggle('hidden', !open);
+            if (open) renderSheetBody();
+          };
+          el.doneBreakdown.appendChild(li);
+        });
+      }
+
+      function renderDoneScreenView(savedRecord = null) {
         el.root.dataset.phase = 'done';
         el.menuTrigger.dataset.diving = 'false';
         el.nextWrap.classList.add('hidden');
+        el.introOverlay.classList.add('hidden');
         el.doneOverlay.classList.remove('hidden');
 
-        store.dives += 1;
-        if (session.score > store.bestScore) store.bestScore = session.score;
+        const score = savedRecord ? savedRecord.score : session.score;
+        const results = savedRecord ? savedRecord.results : session.results;
+        const dayNum = savedRecord ? savedRecord.dayNumber : session.dayNum;
+
+        let headerLabel = `${session.label} complete`;
+        if (session.mode === 'daily') headerLabel = `Dive #${dayNum} complete`;
+        else if (session.mode === 'archive') headerLabel = `Archive ⟲ Dive #${dayNum} complete`;
+        el.doneDiveLabel.textContent = headerLabel.toUpperCase();
+        el.doneScoreBig.textContent = String(score);
+        el.doneDepthSub.textContent = `-${(score * 10).toLocaleString('en-US')}m`;
+
+        renderDistributionCurve(score);
+        renderDiveBarChart(results);
+        renderBearingBands(score);
+        renderCatchAccordion(results, session.prompts);
+
+        el.copyResultsBtn.textContent = 'Copy result';
+        el.nativeShareBtn.classList.toggle('hidden', typeof navigator.share !== 'function');
+
+        const avg = store.dives ? Math.round(store.totalScore / store.dives) : score;
+        el.doneLogbook.innerHTML =
+          `streak <span style="color:var(--color-foam)">${store.streak}</span> · ` +
+          `played <span style="color:var(--color-foam)">${store.dives}</span> · ` +
+          `avg <span style="color:var(--color-foam)">${avg}</span> · ` +
+          `best <span style="color:var(--color-foam)">${store.bestScore}</span>`;
+
+        // Live countdown timer for daily mode
+        clearInterval(doneCountdownTimer);
         if (session.mode === 'daily') {
-          const today = getUtcDateKey();
+          const targetMs = getNextResetMs(liveDailyData?.resetsAt);
+          const updateCd = () => {
+            const rem = targetMs - Date.now();
+            if (rem <= 0) {
+              el.doneCountdownWrap.innerHTML = `next dive in <span style="color:var(--color-lumen-cyan)">ready</span> <button id="cd-refresh" type="button" style="margin-left:8px;text-decoration:underline;color:var(--color-lumen-pink);background:none;border:0;cursor:pointer">refresh</button>`;
+              const refBtn = document.getElementById('cd-refresh');
+              if (refBtn) refBtn.onclick = () => location.reload();
+              clearInterval(doneCountdownTimer);
+              return;
+            }
+            const h = Math.floor(rem / 3600000);
+            const m = Math.floor((rem % 3600000) / 60000);
+            const s = Math.floor((rem % 60000) / 1000);
+            el.doneCountdownWrap.innerHTML = `next dive in <span style="color:var(--color-lumen-cyan);font-variant-numeric:tabular-nums">${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}</span>`;
+          };
+          updateCd();
+          doneCountdownTimer = setInterval(updateCd, 1000);
+        } else {
+          el.doneCountdownWrap.innerHTML = '';
+        }
+      }
+
+      function showDoneScreen() {
+        store.dives += 1;
+        store.totalScore += session.score;
+        if (session.score > store.bestScore) store.bestScore = session.score;
+        if (session.mode === 'unlimited') store.unlimitedRuns += 1;
+        if (session.mode === 'daily') {
+          const today = session.dateStr || getKrillionDailyDateKey();
           if (store.lastDailyDate !== today) {
-            store.streak += 1;
+            const yesterday = getKrillionDailyDateKey(1);
+            store.streak = store.lastDailyDate === yesterday ? store.streak + 1 : 1;
+            if (store.streak > store.maxStreak) store.maxStreak = store.streak;
             store.lastDailyDate = today;
           }
           store.history[today] = session.score;
+          store.completedDailies[today] = {
+            date: today,
+            dayNumber: session.dayNum,
+            score: session.score,
+            results: session.results.slice(),
+          };
         }
         saveStore(store);
+        renderDoneScreenView(null);
+      }
 
-        const band = [...SCORE_BANDS].reverse().find((b) => session.score >= b.min) || SCORE_BANDS[0];
-        el.doneDiveLabel.textContent = `${session.label} complete`;
-        el.doneScoreBig.textContent = String(session.score);
-        el.doneDepthSub.textContent = `-${(session.score * 10).toLocaleString()}m`;
-        el.doneVerdict.textContent = band.verdict;
-        el.doneEmojiBar.textContent = session.results.map((r) => r.emoji).join(' ');
-
-        el.doneBreakdown.innerHTML = '';
-        session.results.forEach((r, idx) => {
-          const row = document.createElement('div');
-          row.className = 'round-row';
-          row.innerHTML = `
-            <div style="min-width:0">
-              <div style="font-size:14px;color:var(--color-drift)">#${idx + 1} · ${r.prompt}</div>
-              <div style="font-size:20px;color:var(--color-foam)">${r.emoji} ${r.answer} <span style="font-size:15px;color:var(--color-drift)">(${r.name})</span></div>
-            </div>
-            <div style="font-size:22px;color:var(--color-lumen-cyan);white-space:nowrap">+${r.score}</div>
-          `;
-          el.doneBreakdown.appendChild(row);
-        });
+      function buildCurrentShareText() {
+        const emojis = session.results.map((r) => r.emoji || '⬛').join('');
+        let header = `Krillion #${session.dayNum} 🦐`;
+        if (session.mode === 'archive') header = `Krillion ⟲ #${session.dayNum} 🦐`;
+        else if (session.mode === 'unlimited') header = `Krillion ∞ #${Math.max(1, store.unlimitedRuns)} 🦐`;
+        else if (session.mode === 'pack') header = `Krillion ${session.label} 🦐`;
+        const base = `${header}\n${session.score}\n\n${emojis}`;
+        return store.shareLink ? `${base}\nhttps://krillion.io` : base;
       }
 
       el.beginBtn.addEventListener('click', async () => {
@@ -2534,17 +3355,191 @@
         }
       });
 
-      el.copyResultsBtn.addEventListener('click', () => {
-        const share = `Krillion ${session.label}\n${session.score}/700 (-${(session.score * 10).toLocaleString()}m)\n${session.results.map((r) => r.emoji).join('')}`;
-        navigator.clipboard?.writeText(share).catch(() => {});
-        el.copyToast.textContent = 'Copied dive card to clipboard!';
+      el.copyResultsBtn.addEventListener('click', async () => {
+        const text = buildCurrentShareText();
+        try {
+          await navigator.clipboard.writeText(text);
+        } catch {}
+        el.copyResultsBtn.textContent = 'Copied ✓';
+        setTimeout(() => { el.copyResultsBtn.textContent = 'Copy result'; }, 2000);
       });
 
-      el.playUnlimitedBtn.addEventListener('click', () => setupMode({ mode: 'unlimited' }));
+      el.nativeShareBtn.addEventListener('click', () => {
+        navigator.share?.({ text: buildCurrentShareText() }).catch(() => {});
+      });
+
+      el.playUnlimitedBtn.addEventListener('click', () => {
+        setupMode({ mode: 'unlimited' });
+        audio.play('begin');
+        startRound(0);
+      });
+      el.doneArchiveBtn.addEventListener('click', () => openHub('archive'));
+      el.donePacksBtn.addEventListener('click', () => openHub('packs'));
       el.backSurfaceBtn.addEventListener('click', () => setupMode({ mode: 'daily' }));
+
+      // === Interactive Puffer Party Mode matching krillion.io ===
+      function openPartyMode() {
+        clearInterval(partyTimer);
+        el.hubScreen.classList.remove('hidden');
+        const prompts = seededShuffle(CLASSIC_PROMPTS, `party-${Date.now()}`);
+        let promptIdx = 0;
+        const players = [
+          { name: 'You', isHuman: true, alive: true, sprite: (BUDDIES.find((b) => b.id === store.buddyId) || BUDDIES[0]).sprite },
+          { name: 'Captain Krill', isHuman: false, alive: true, sprite: './assets/tiers/schooler.png' },
+          { name: 'SquidKid', isHuman: false, alive: true, sprite: './assets/tiers/rare.png' },
+          { name: 'AnglerPro', isHuman: false, alive: true, sprite: './assets/tiers/deepcut.png' },
+        ];
+        let holderIdx = 0;
+        let used = new Set();
+        let fuseMs = (10 + Math.random() * 20) * 1000;
+        let lastTick = performance.now();
+        let statusMsg = 'Name an answer and pass the puffer before it pops!';
+        let winner = null;
+
+        function nextAlive(fromIdx) {
+          for (let step = 1; step <= players.length; step++) {
+            const idx = (fromIdx + step) % players.length;
+            if (players[idx].alive) return idx;
+          }
+          return fromIdx;
+        }
+
+        function botPickAnswer(pObj) {
+          const pool = [
+            ...(pObj.schooler || []),
+            ...(pObj.rare || []),
+            ...(pObj.plankton || []),
+            ...(pObj.deepcut || []),
+          ].filter((w) => !used.has(normalize(w)));
+          if (pool.length > 0) return pool[Math.floor(Math.random() * Math.min(pool.length, 6))];
+          return `ocean pick ${Math.floor(Math.random() * 99)}`;
+        }
+
+        function renderParty() {
+          const curPrompt = prompts[promptIdx % prompts.length];
+          const curHolder = players[holderIdx];
+          const pufferScale = winner ? 1 : (0.95 + Math.max(0, 1 - fuseMs / 30000) * 0.55);
+
+          el.hubContent.innerHTML = `
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+              <div>
+                <p style="font-size:14px;letter-spacing:0.2em;color:var(--color-lumen-cyan);text-transform:uppercase">PUFFER PARTY</p>
+                <h1 style="font-size:clamp(42px,8vw,60px);line-height:1;color:var(--color-foam);text-shadow:-2px 2px #ff5d8f,2px -2px #4de3ff">PASS THE PUFFER</h1>
+                <p style="font-size:18px;color:var(--color-drift);margin-top:4px">pass the puffer · don't let it pop on you</p>
+              </div>
+              <button id="party-back-btn" class="btn-quiet" type="button">← Surface</button>
+            </div>
+            <div class="party-arena">
+              <div style="text-align:center">
+                <div style="font-size:14px;letter-spacing:0.24em;color:var(--color-lumen-pink);text-transform:uppercase">CATEGORY PROMPT</div>
+                <div style="font-size:clamp(26px,5vw,34px);color:var(--color-foam);margin-top:4px">${escHtml(curPrompt.q)}</div>
+              </div>
+              <div class="party-puffer-wrap">
+                <img class="party-puffer-img" src="./assets/puffer-0.png" style="transform:scale(${pufferScale.toFixed(2)})" alt="Pufferfish"/>
+                <div style="font-size:18px;color:${winner ? '#ffd166' : 'var(--color-lumen-cyan)'}">${escHtml(statusMsg)}</div>
+              </div>
+              <div class="party-players">
+                ${players.map((pl, idx) => `
+                  <div class="party-player" data-active="${!winner && idx === holderIdx}" data-out="${!pl.alive}">
+                    <img src="${pl.sprite}" width="36" height="36" style="margin:0 auto 4px;image-rendering:pixelated" alt=""/>
+                    <div style="font-size:18px;color:var(--color-foam)">${escHtml(pl.name)}</div>
+                    <div style="font-size:13px;color:${pl.alive ? (idx === holderIdx && !winner ? 'var(--color-lumen-pink)' : 'var(--color-drift)') : '#ff5252'}">${pl.alive ? (idx === holderIdx && !winner ? 'HOLDING BOMB' : 'Afloat') : 'POPPED'}</div>
+                  </div>
+                `).join('')}
+              </div>
+              ${winner ? `
+                <div style="display:flex;gap:12px;justify-content:center;padding-top:8px">
+                  <button id="party-again-btn" class="btn-descend" type="button">Play Again</button>
+                  <button id="party-exit-btn" class="btn-quiet" type="button">Back to Daily</button>
+                </div>
+              ` : (curHolder.isHuman ? `
+                <form id="party-form" style="display:flex;gap:10px" autocomplete="off">
+                  <input id="party-input" class="ds-input" style="font-size:22px" type="text" placeholder="type one answer to pass…" maxlength="44" />
+                  <button class="ds-dive-btn" type="submit">PASS</button>
+                </form>
+              ` : `<div style="text-align:center;font-size:18px;color:var(--color-drift)">Waiting on ${escHtml(curHolder.name)}…</div>`)}
+            </div>
+          `;
+
+          document.getElementById('party-back-btn').onclick = () => { clearInterval(partyTimer); el.hubScreen.classList.add('hidden'); };
+          if (winner) {
+            document.getElementById('party-again-btn').onclick = () => openPartyMode();
+            document.getElementById('party-exit-btn').onclick = () => { clearInterval(partyTimer); el.hubScreen.classList.add('hidden'); };
+          } else if (curHolder.isHuman) {
+            const pInp = document.getElementById('party-input');
+            pInp?.focus();
+            document.getElementById('party-form').onsubmit = (e) => {
+              e.preventDefault();
+              const v = evaluateAnswer(curPrompt, pInp.value, used);
+              if (!v.ok) {
+                audio.play('reject');
+                statusMsg = v.reason;
+                renderParty();
+                return;
+              }
+              used.add(v.clean);
+              audio.play('submit');
+              if (fuseMs < 8000) fuseMs = 8000; // Matches krillion.io rule: restores to 8s if below 8s on pass
+              holderIdx = nextAlive(holderIdx);
+              statusMsg = `You passed with “${pInp.value.trim()}”!`;
+              renderParty();
+            };
+          }
+        }
+
+        let botThinkMs = 1800;
+        renderParty();
+        partyTimer = setInterval(() => {
+          if (winner) { clearInterval(partyTimer); return; }
+          const now = performance.now();
+          const dt = Math.min(200, now - lastTick);
+          lastTick = now;
+          fuseMs -= dt;
+
+          if (fuseMs <= 0) {
+            audio.play('miss');
+            players[holderIdx].alive = false;
+            const poppedName = players[holderIdx].name;
+            const aliveList = players.filter((p) => p.alive);
+            if (aliveList.length <= 1) {
+              winner = aliveList[0] || players[0];
+              statusMsg = `💥 POP! ${poppedName} went down — ${winner.name} wins!`;
+              if (winner.isHuman) audio.play('krillion');
+              renderParty();
+              return;
+            }
+            statusMsg = `💥 POP! ${poppedName} is out! New prompt & fresh fuse!`;
+            promptIdx += 1;
+            used = new Set();
+            fuseMs = (10 + Math.random() * 20) * 1000;
+            holderIdx = nextAlive(holderIdx);
+            botThinkMs = 1600;
+            renderParty();
+            return;
+          }
+
+          if (!players[holderIdx].isHuman) {
+            botThinkMs -= dt;
+            if (botThinkMs <= 0) {
+              const curPrompt = prompts[promptIdx % prompts.length];
+              const ans = botPickAnswer(curPrompt);
+              used.add(normalize(ans));
+              const botName = players[holderIdx].name;
+              audio.play('blub');
+              if (fuseMs < 8000) fuseMs = 8000;
+              holderIdx = nextAlive(holderIdx);
+              botThinkMs = 1300 + Math.random() * 1400;
+              statusMsg = `${botName} answered “${ans}” and passed!`;
+              renderParty();
+            }
+          }
+        }, 120);
+      }
 
       // === Menu & Secondary Views ===
       function openHub(viewName) {
+        clearInterval(partyTimer);
+        if (viewName === 'party') { openPartyMode(); return; }
         el.hubScreen.classList.remove('hidden');
         el.hubContent.innerHTML = '';
 
@@ -2560,15 +3555,48 @@
         `;
 
         if (viewName === 'packs') {
-          el.hubContent.innerHTML = header('THEMED PACKS', 'CHOOSE A PACK', 'Curated 7-prompt thematic descents.') + `<div class="pack-grid">${Object.entries(PACKS).map(([id, pk]) => `
-            <button class="pack-card" data-pack="${id}">
-              <img src="./assets/cards/${id === 'cinema' ? 'movies' : id}.webp" alt=""/>
-              <div class="pack-card-body">
-                <div style="font-size:22px;color:var(--color-foam)">${pk.title}</div>
-                <div style="font-size:15px;color:var(--color-drift);margin-top:4px">${pk.subline}</div>
-              </div>
-            </button>
-          `).join('')}</div>`;
+          el.hubContent.innerHTML = header('THEMED PACKS', 'BEYOND THE DAILY DIVE', '30-chapter packs · Free for now · BETA.') + `
+            <div class="pack-grid">
+              <button class="pack-card" data-pack="lexicon">
+                <img src="./assets/cards/lexicon.webp" alt=""/>
+                <div class="pack-card-body">
+                  <div style="font-size:22px;color:var(--color-foam)">WORDS & LANGUAGE (ENGLISH)</div>
+                  <div style="font-size:15px;color:var(--color-drift)">30 chapters · fill the notebook, word by word</div>
+                  <div style="margin-top:auto;padding-top:8px;font-size:15px;color:var(--color-lumen-cyan);letter-spacing:0.12em">OPEN THE NOTEBOOK →</div>
+                </div>
+              </button>
+              <button class="pack-card" data-pack="cinema">
+                <img src="./assets/cards/movies.webp" alt=""/>
+                <div class="pack-card-body">
+                  <div style="font-size:22px;color:var(--color-foam)">AT THE MOVIES</div>
+                  <div style="font-size:15px;color:var(--color-drift)">30 pictures · a night drive down the boulevard</div>
+                  <div style="margin-top:auto;padding-top:8px;font-size:15px;color:#ffd166;letter-spacing:0.12em">TAKE THE DRIVE →</div>
+                </div>
+              </button>
+              <button class="pack-card" data-pack="sports">
+                <img src="./assets/cards/sports.webp" alt=""/>
+                <div class="pack-card-body">
+                  <div style="font-size:22px;color:var(--color-foam)">SPORTS</div>
+                  <div style="font-size:15px;color:var(--color-drift)">30 games · run the gauntlet, court to podium</div>
+                  <div style="margin-top:auto;padding-top:8px;font-size:15px;color:var(--color-lumen-cyan);letter-spacing:0.12em">TAKE THE TUNNEL →</div>
+                </div>
+              </button>
+              <button class="pack-card" data-pack="geography">
+                <img src="./assets/cards/geography.webp" alt=""/>
+                <div class="pack-card-body">
+                  <div style="font-size:22px;color:var(--color-foam)">GEOGRAPHY</div>
+                  <div style="font-size:15px;color:var(--color-drift)">30 expeditions · around the world in seven answers</div>
+                  <div style="margin-top:auto;padding-top:8px;font-size:15px;color:var(--color-lumen-cyan);letter-spacing:0.12em">SET OUT →</div>
+                </div>
+              </button>
+              <button class="pack-card" disabled>
+                <img src="./assets/cards/classic.webp" alt=""/>
+                <div class="pack-card-body">
+                  <div style="font-size:22px;color:var(--color-foam)">MUSIC · COMING SOON</div>
+                  <div style="font-size:15px;color:var(--color-drift)">from the charts to the deep cuts · more packs are being charted…</div>
+                </div>
+              </button>
+            </div>`;
           el.hubContent.querySelectorAll('[data-pack]').forEach((btn) => {
             btn.addEventListener('click', () => {
               el.hubScreen.classList.add('hidden');
@@ -2578,16 +3606,19 @@
             });
           });
         } else if (viewName === 'archive') {
-          const days = Array.from({ length: 10 }, (_, i) => getUtcDateKey(i + 1));
-          el.hubContent.innerHTML = header('ARCHIVE', 'PAST DIVES', 'Replay earlier daily sets.') + `<div class="hub-panel">${days.map((d) => `
-            <div class="round-row">
-              <div>
-                <div style="font-size:22px;color:var(--color-foam)">Dive #${getDayNumber(d)}</div>
-                <div style="font-size:15px;color:var(--color-drift)">${d}</div>
+          const days = Array.from({ length: 12 }, (_, i) => getKrillionDailyDateKey(i + 1));
+          el.hubContent.innerHTML = header('ARCHIVE', 'PAST DIVES', 'Every aired daily, resurfaceable.') + `<div class="hub-panel">${days.map((d) => {
+            const best = store.history[d];
+            return `
+              <div class="round-row">
+                <div>
+                  <div style="font-size:22px;color:var(--color-foam)">Dive #${getDayNumber(d)} ${best !== undefined ? `<span style="font-size:15px;color:var(--color-lumen-cyan)">· ${best} pts</span>` : ''}</div>
+                  <div style="font-size:15px;color:var(--color-drift)">${d}</div>
+                </div>
+                <button class="btn-quiet" data-date="${d}" type="button">Dive ⟲</button>
               </div>
-              <button class="btn-quiet" data-date="${d}" type="button">Dive ⟲</button>
-            </div>
-          `).join('')}</div>`;
+            `;
+          }).join('')}</div>`;
           el.hubContent.querySelectorAll('[data-date]').forEach((btn) => {
             btn.addEventListener('click', () => {
               el.hubScreen.classList.add('hidden');
@@ -2597,19 +3628,22 @@
             });
           });
         } else if (viewName === 'account') {
-          el.hubContent.innerHTML = header('MY KRILLION', 'DIVE LOG & BUDDIES', 'Select any unlocked creature to swim alongside your dives.') + `
-            <div class="hub-panel" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;text-align:center">
-              <div><div style="font-size:38px;color:var(--color-lumen-cyan)">${store.dives}</div><div style="font-size:14px;color:var(--color-drift)">DIVES</div></div>
-              <div><div style="font-size:38px;color:var(--color-lumen-pink)">${store.streak}</div><div style="font-size:14px;color:var(--color-drift)">STREAK</div></div>
-              <div><div style="font-size:38px;color:#ffd166">${store.bestScore}</div><div style="font-size:14px;color:var(--color-drift)">BEST SCORE</div></div>
+          const bestStreak = Math.max(store.maxStreak, store.streak);
+          const avg = store.dives ? Math.round(store.totalScore / store.dives) : 0;
+          el.hubContent.innerHTML = header('MY KRILLION', 'LOGBOOK & BUDDIES', 'Your stats and companions unlocked through daily streaks.') + `
+            <div class="hub-panel" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;text-align:center">
+              <div><div style="font-size:36px;color:var(--color-lumen-cyan)">${store.dives}</div><div style="font-size:13px;color:var(--color-drift)">DIVES</div></div>
+              <div><div style="font-size:36px;color:var(--color-lumen-pink)">${store.streak}</div><div style="font-size:13px;color:var(--color-drift)">STREAK</div></div>
+              <div><div style="font-size:36px;color:var(--color-foam)">${avg}</div><div style="font-size:13px;color:var(--color-drift)">AVG</div></div>
+              <div><div style="font-size:36px;color:#ffd166">${store.bestScore}</div><div style="font-size:13px;color:var(--color-drift)">BEST SCORE</div></div>
             </div>
             <div class="buddy-grid">${BUDDIES.map((b) => {
-              const earned = store.streak >= b.unlockStreak || b.unlockStreak === 0 || store.dives >= b.unlockStreak;
+              const earned = b.unlockStreak === 0 || bestStreak >= b.unlockStreak;
               return `
                 <button class="buddy-card" data-buddy="${b.id}" data-earned="${earned}" data-selected="${store.buddyId === b.id}">
-                  <img width="52" height="52" src="${b.sprite}" alt="${b.name}"/>
-                  <div style="font-size:17px;color:var(--color-foam)">${b.name}</div>
-                  <small style="font-size:13px;color:var(--color-drift)">${earned ? 'Ready' : `Unlock at ${b.unlockStreak} dives`}</small>
+                  <img width="52" height="52" src="${b.sprite}" alt="${escHtml(b.name)}"/>
+                  <div style="font-size:17px;color:var(--color-foam)">${escHtml(b.name)}</div>
+                  <small style="font-size:13px;color:var(--color-drift)">${earned ? (store.buddyId === b.id ? 'Active' : 'Ready') : `${b.unlockStreak}-day streak`}</small>
                 </button>
               `;
             }).join('')}</div>
@@ -2624,19 +3658,31 @@
             });
           });
         } else if (viewName === 'settings') {
-          el.hubContent.innerHTML = header('SETTINGS', 'PREFERENCES', 'Display and audio controls.') + `
+          el.hubContent.innerHTML = header('SETTINGS', 'PREFERENCES', 'Display, gameplay, and sharing controls.') + `
             <div class="hub-panel">
               <div class="round-row">
-                <div><div style="font-size:21px">Sound Effects</div><div style="font-size:14px;color:var(--color-drift)">Retro underwater synth chimes & radar ticks</div></div>
+                <div><div style="font-size:21px">Sound effects</div><div style="font-size:14px;color:var(--color-drift)">Retro underwater synth chimes & radar ticks</div></div>
                 <button id="set-sound" class="btn-quiet" type="button">${audio.muted ? 'OFF' : 'ON'}</button>
               </div>
               <div class="round-row">
-                <div><div style="font-size:21px">High Contrast / Colorblind</div><div style="font-size:14px;color:var(--color-drift)">Boosts tier label legibility & reduces scanlines</div></div>
+                <div><div style="font-size:21px">Colorblind mode</div><div style="font-size:14px;color:var(--color-drift)">Boosts tier label contrast across dark depths</div></div>
                 <button id="set-cb" class="btn-quiet" type="button">${store.colorblind ? 'ON' : 'OFF'}</button>
               </div>
               <div class="round-row">
-                <div><div style="font-size:21px">Reduced Motion</div><div style="font-size:14px;color:var(--color-drift)">Stops camera bobbing during prompts</div></div>
-                <button id="set-rm" class="btn-quiet" type="button">${store.reducedMotion ? 'ON' : 'OFF'}</button>
+                <div><div style="font-size:21px">Low power mode</div><div style="font-size:14px;color:var(--color-drift)">Reduces marine particles and camera bobbing</div></div>
+                <button id="set-lp" class="btn-quiet" type="button">${store.lowPower ? 'ON' : 'OFF'}</button>
+              </div>
+              <div class="round-row">
+                <div><div style="font-size:21px">Clear rejected entry</div><div style="font-size:14px;color:var(--color-drift)">Clears input text automatically when rejected</div></div>
+                <button id="set-clear" class="btn-quiet" type="button">${store.clearRejected ? 'ON' : 'OFF'}</button>
+              </div>
+              <div class="round-row">
+                <div><div style="font-size:21px">Answer corrections</div><div style="font-size:14px;color:var(--color-drift)">Displays typo/alias match notes above the dock</div></div>
+                <button id="set-corr" class="btn-quiet" type="button">${store.answerCorrections ? 'ON' : 'OFF'}</button>
+              </div>
+              <div class="round-row">
+                <div><div style="font-size:21px">Include link when sharing</div><div style="font-size:14px;color:var(--color-drift)">Adds https://krillion.io under your score grid</div></div>
+                <button id="set-link" class="btn-quiet" type="button">${store.shareLink ? 'ON' : 'OFF'}</button>
               </div>
             </div>
           `;
@@ -2647,20 +3693,25 @@
             saveStore(store);
             openHub('settings');
           };
-          document.getElementById('set-rm').onclick = () => {
-            store.reducedMotion = !store.reducedMotion;
-            saveStore(store);
-            openHub('settings');
-          };
+          document.getElementById('set-lp').onclick = () => { store.lowPower = !store.lowPower; saveStore(store); openHub('settings'); };
+          document.getElementById('set-clear').onclick = () => { store.clearRejected = !store.clearRejected; saveStore(store); openHub('settings'); };
+          document.getElementById('set-corr').onclick = () => { store.answerCorrections = !store.answerCorrections; saveStore(store); openHub('settings'); };
+          document.getElementById('set-link').onclick = () => { store.shareLink = !store.shareLink; saveStore(store); openHub('settings'); };
         } else if (viewName === 'faq') {
-          el.hubContent.innerHTML = header('FAQ', 'HOW KRILLION WORKS', 'Seven prompts. Obscure answers sink deeper.') + `
-            <div class="hub-panel" style="font-size:18px;line-height:1.4;color:var(--color-drift)">
-              <p><b style="color:var(--tier-plankton)">🫧 Plankton (+10 · 100m):</b> The top obvious picks everyone blurts out.</p>
-              <p><b style="color:var(--tier-tooclever)">🤡 Too Clever (+15 · 150m):</b> The "quirky" answer half the players reach for.</p>
-              <p><b style="color:var(--tier-schooler)">🐟 Schooler (+30 · 300m):</b> Solid answers swimming in the middle pack.</p>
-              <p><b style="color:var(--tier-rare)">🦑 Rare (+60 · 600m):</b> Genuinely uncommon picks below the thermocline.</p>
-              <p><b style="color:var(--tier-deepcut)">🏮 Deep Cut (+85 · 850m):</b> Obscure trivia few players ever think of.</p>
-              <p><b style="color:var(--tier-krillion)">🌟 One in a Krillion (+100 · 1,000m):</b> Trench floor gems. 700 pts reaches 7,000m.</p>
+          el.hubContent.innerHTML = header('FAQ', 'FREQUENTLY ASKED QUESTIONS', 'How Krillion works, scoring tiers, and Puffer Party.') + `
+            <div class="hub-panel" style="font-size:18px;line-height:1.45;color:var(--color-drift)">
+              <p><b style="color:var(--color-foam)">how are answer sets curated?</b><br/>By aggregating datasets (dictionaries, wiki pages, encyclopedias, whatever sources the question calls for), then merging and cleaning the result into one answer set.</p>
+              <p><b style="color:var(--color-foam)">how is rarity determined?</b><br/>Some prompts are scored mechanically against a familiarity database of how often a word turns up. Others combine language model calibration and a manual pass.</p>
+              <p><b style="color:var(--color-foam)">why is the krillion sometimes less rare than some deep cuts?</b><br/>Because the Krillion isn’t chosen on rarity alone — the gem is picked for fun factor so it’s something players might actually pull.</p>
+              <p><b style="color:var(--color-foam)">Why does the Puffer Party timer feel random?</b><br/>It’s actually the length of the hidden fuse that’s random, between 10 and 30 seconds. If there are fewer than 8 seconds left when you pass, it restores to 8.</p>
+              <p><b style="color:var(--color-foam)">depth tiers</b><br/>
+                <span style="color:var(--tier-plankton)">🫧 Plankton (+10 · 100m)</span> ·
+                <span style="color:var(--tier-tooclever)">🤡 Too Clever (+15 · 150m)</span> ·
+                <span style="color:var(--tier-schooler)">🐟 Schooler (+30 · 300m)</span> ·
+                <span style="color:var(--tier-rare)">🦑 Rare (+60 · 600m)</span> ·
+                <span style="color:var(--tier-deepcut)">🏮 Deep Cut (+85 · 850m)</span> ·
+                <span style="color:var(--tier-krillion)">🌟 One in a Krillion (+100 · 1,000m)</span>
+              </p>
             </div>
           `;
         }
@@ -2681,10 +3732,10 @@
           btn.setAttribute('aria-current', 'page');
           el.siteMenu.close();
           const nav = btn.dataset.nav;
-          if (nav === 'daily' || nav === 'unlimited' || nav === 'party') {
+          if (nav === 'daily' || nav === 'unlimited') {
             el.hubScreen.classList.add('hidden');
             setupMode({ mode: nav });
-            if (nav !== 'daily') { audio.play('begin'); startRound(0); }
+            if (nav === 'unlimited') { audio.play('begin'); startRound(0); }
           } else {
             openHub(nav);
           }
